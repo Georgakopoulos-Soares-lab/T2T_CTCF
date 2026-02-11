@@ -1,0 +1,38 @@
+name: ctcf
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  # - gcc_linux-aarch64 
+  # - gxx_linux-aarch64 
+  - python=3.9
+  - r-base=4.4
+  - r-essentials
+  - radian
+  - mamba
+  - r-languageserver
+  - r-httpgd
+  - r-biocmanager
+  - bioconductor-karyoploter
+  - snakemake
+  - r-ggplot2
+  - bioconductor-rtracklayer
+  - bioconductor-karyoploter
+  - jupyter
+  - r-irkernel
+  - parallel
+  - pigz
+  - ucsc-bigbedtobed
+  - awscli
+  - snakemake
+  - bioconductor-genomicranges
+  - r-tidyverse
+  - samtools
+  - make 
+  - git
+  - hdf5
+  - r-ggvenn
+  - r-eulerr
+  - r-ggsci
+  - r-patchwork

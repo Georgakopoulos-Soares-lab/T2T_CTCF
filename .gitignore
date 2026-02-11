@@ -47,3 +47,15 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Local data, results, and temporary dirs
+data/
+res/
+tmp/
+logs/
+src/slurm.sh
+src/.snakemake/
+src/sonLib/
+src/hal/
+src/notebook.ipynb
+src/notebook2.ipynb
