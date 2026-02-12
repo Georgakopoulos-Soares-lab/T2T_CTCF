@@ -36,3 +36,4 @@ dependencies:
   - r-eulerr
   - r-ggsci
   - r-patchwork
+  - r-svglite

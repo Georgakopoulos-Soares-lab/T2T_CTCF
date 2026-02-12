@@ -80,7 +80,8 @@ make_venn <- function(motif) {
     text_size = 2,
     stroke_alpha = 1,
     fill_alpha = 0.5,
-    show_percentage = FALSE
+    show_percentage = FALSE,
+    auto_scale = TRUE
   ) +
     ggtitle(motif) +
     theme(
