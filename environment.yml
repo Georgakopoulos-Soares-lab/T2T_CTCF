@@ -14,11 +14,9 @@ dependencies:
   - r-languageserver
   - r-httpgd
   - r-biocmanager
-  - bioconductor-karyoploter
   - snakemake
   - r-ggplot2
   - bioconductor-rtracklayer
-  - bioconductor-karyoploter
   - jupyter
   - r-irkernel
   - parallel
@@ -33,7 +31,8 @@ dependencies:
   - git
   - hdf5
   - r-ggvenn
-  - r-eulerr
+  # - bioconductor-karyoploter
   - r-ggsci
   - r-patchwork
   - r-svglite
+  - bioconductor-plyranges

@@ -73,7 +73,7 @@ make_venn <- function(motif) {
   
   # Create the Venn diagramm
   ggvenn(
-    list(hg38 = hg38_set, `T2T-CHM13` = chm13_liftover_set),
+    list(GRCh38 = hg38_set, `T2T-CHM13` = chm13_liftover_set),
     fill_color = c("#b64547","#566B94"),
     stroke_size = 0.2,
     set_name_size = 2,
