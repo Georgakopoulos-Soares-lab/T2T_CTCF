@@ -35,4 +35,6 @@ dependencies:
   - r-ggsci
   - r-patchwork
   - r-svglite
+  - r-paletteer
   - bioconductor-plyranges
+  - bioconductor-regioner

@@ -1,4 +1,4 @@
-# T2T_CTCF
+# Analysis of the potential CTCF binding sites across the complete telomere-to-telomere human genome
 
 Comparative analysis of CTCF transcription factor binding sites across Telomere-to-Telomere (T2T) genome assemblies, including human references (CHM13, hg38), the HG002 diploid genome, 40+ human pangenome assemblies, and six T2T great ape genomes.
 
@@ -120,6 +120,12 @@ Rscript karyoplot.R          # -> res/plots/karyotype_plot.pdf
 
 ```bash
 Rscript venn_diagram.R       # -> res/plots/all_liftover_venns.pdf
+```
+
+**Density plots** -- Calculate CTCF density (number of sites per 1Mb) across different CenSat types and chromosomes. The plots created depict CTCF density in different CenSat compartments compared to genome wide for all 3 JASPAR CTCF motifs used.
+
+```bash
+Rscript density_plots.R       # -> res/plots/combined_densities.svg
 ```
 
 ## Installation
