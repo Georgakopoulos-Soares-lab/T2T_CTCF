@@ -45,6 +45,9 @@ chm13_urls=(
     # CpG methylation levels of CHM13 
     "https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/annotation/regulation/chm13v2.0_CHM13_CpG_ont_guppy3.6.0_nanopolish0.13.2.bw"
 
+    # Fiber-seq generated accessibility track
+    "https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/browser/CHM13/bbi/all.percent.accessible.bw"
+
 )
 
 printf '%s\n' "${chm13_urls[@]}" | parallel -j 8 wget
