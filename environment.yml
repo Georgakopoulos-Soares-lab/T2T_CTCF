@@ -38,3 +38,6 @@ dependencies:
   - r-paletteer
   - bioconductor-plyranges
   - bioconductor-regioner
+  - bioconductor-txdbmaker
+  - bioconductor-ggtree
+  - r-ape

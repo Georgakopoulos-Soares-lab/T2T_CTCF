@@ -19,9 +19,10 @@ suppressPackageStartupMessages({
 # Read the configuration YAML file that stores the paths of the directories used throughout the analysis
 config <- read_yaml("../config.yml")
 
-fimo_res = fs::path(config$fimo_res) # Path containing FIMO results for CHM13, HG002, T2T primates, and human pangenome asseblies
-data = fs::path(config$data) # Path containing metadata for CHM13, HG002, T2T primates, and human pangenome asseblies
-plots = fs::path(config$plots) # Path to store any generated plots
+res_path <- fs::path(config$res) # Path containing all results
+fimo_res <- fs::path(config$fimo_res) # Path containing FIMO results for CHM13, HG002, T2T primates, and human pangenome asseblies
+data <- fs::path(config$data) # Path containing metadata for CHM13, HG002, T2T primates, and human pangenome asseblies
+plots <- fs::path(config$plots) # Path to store any generated plots
 
 load_fimo_results <- function(genome, fimo_res_dir) {
   # Load all FIMO results for the specified genome
@@ -134,6 +135,13 @@ for (motif in motifs) {
   ))
 }
 
+# Load the results of the permutation test we performed on
+# the censat_density_perm_test.R script
+censat_perm_res <- read_csv(
+  fs::path(res_path, "misc", "chm13_permtest_results.csv"),
+  show_col_types = FALSE
+)
+
 # Define a color palette to be used throughout the plots
 motif_palette <- c("MA0139.2" = "#A3ABC0", "MA1929.2" = "#424D6A", "MA1930.2" = "#0E1933")
 per_mb_cols <- paste0(motifs, "_per_Mb")
@@ -146,6 +154,25 @@ censat_plot_df <- censat_density_df |>
     values_to = "density_per_Mb") |>
   mutate(motif = gsub("_per_Mb", "", motif))
 
+
+# Add the permutation test results to the dataframe we will
+# use for plotting
+censat_plot_df <- inner_join(
+  censat_plot_df,
+  censat_perm_res,
+  by = c("type", "motif")
+)
+
+# Add star annotations based on the BH adjusted p-value for
+# plotting
+censat_plot_df <- censat_plot_df |>
+  mutate(significance = case_when(
+    padj < 0.001 ~ "***",
+    padj < 0.01 ~ "**",
+    padj < 0.05 ~ "*",
+    TRUE ~ ""
+  ))
+
 # Rename the CenSat types for plotting
 censat_plot_df$type <- censat_mapping[censat_plot_df$type]
 
@@ -157,6 +184,16 @@ density_bars <- ggplot(censat_plot_df, aes(x = density_per_Mb, y = type, fill = 
     linetype = "dashed", linewidth = 0.4, alpha = 0.9
   ) +
   geom_col(position = "dodge", color = "black", linewidth = 0.25) +
+  # Add significance stars at the end of each bar
+  geom_text(
+    aes(label = significance, group = motif),
+    position = position_dodge(width = 0.9),
+    vjust = 0.8,
+    hjust = -0.2,  # push slightly to the right of the bar
+    size = 3
+  ) +
+  # Add some extra x-axis space so stars aren't clipped
+  scale_x_continuous(expand = expansion(mult = c(0, 0.25))) +
   labs(x = "Motif density\n(sites per 1Mb)", y = NULL, fill = "Motif") +
   theme_classic() +
   theme(panel.grid.major.y = element_line(color = "gray70", linewidth = 0.3),
@@ -176,7 +213,7 @@ density_bars <- ggplot(censat_plot_df, aes(x = density_per_Mb, y = type, fill = 
   )) +
   guides(fill = guide_legend(), color = "none")
 
-# Convert the previous CenSAt GRanges object containing the number of
+  # Convert the previous CenSAt GRanges object containing the number of
 # strand-agnostic motif overlaps into a dataframe
 chm13_censat_ctcf_overlap_counts <- as.data.frame(chm13_censat_gr)
 
@@ -249,7 +286,7 @@ density_heatmap <- ggplot(
   ))
 
 # Using patchwork combine the two density plots into one and save
-combined_density_plots <- (density_bars | density_heatmap) + 
+combined_density_plots <- (density_bars | density_heatmap) +
   plot_layout(widths = c(1, 3)) &
   theme(
     legend.position = "bottom",

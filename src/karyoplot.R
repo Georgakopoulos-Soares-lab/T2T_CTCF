@@ -86,15 +86,29 @@ chm13.cytobands.gr <- makeGRangesFromDataFrame(
   keep.extra.columns = TRUE
 )
 
+# Load CHM13 segmental duplication annotations
+seg_dups <- import(fs::path(data, "chm13", "chm13v2.0_SD.bed"), format = "BED")
+
+# Load CHM13 CenSat annotations
+chm13_censat_gr <- import(fs::path(data, "chm13", "chm13v2.0_censat_v2.1.bed"), format = "BED")
+
+# Extract CenSat type from the names 
+chm13_censat_gr$type <- sub("_.*", "", chm13_censat_gr$name)
+
+# If an HOR has L at the end of the name then this indicates that this is the active alpha-satellite HOR
+chm13_censat_gr$type[chm13_censat_gr$type == "hor" & grepl("L\\)$", chm13_censat_gr$name)] <- "hor_l"
+
+# Drop unnecessary collumns
+mcols(chm13_censat_gr)[, c("score", "itemRgb", "thick")] <- NULL
+
 # Create a karyotype plot showing the distribution of CTCF sites across the genome
 suppressMessages({
     pdf(fs::path(plots, "karyotype_plot.pdf"), width = 4, height = 11.3)
-    
     # Load genome using the T2T-CHM13 genome data
     kp <- plotKaryotype(
         genome = chm13.genome.gr, 
         cytobands = chm13.cytobands.gr, 
-        plot.type = 1, # Karyotype with room above for the plot
+        plot.type = 2, # Karyotype with room above for the plot
         cex = 0.85
     )
 
@@ -103,7 +117,26 @@ suppressMessages({
         kp, 
         chm13$gr,
         window.size = 1e6,
-        col="#6C6E72"
+        col="#c7c8c9",
+        data.panel = 1
+    )
+    # Plot segmental duplications
+    kp <- kpPlotRegions(
+        kp, 
+        reduce(seg_dups),
+        col="#D68D00",
+        border = NA,
+        data.panel = 2,
+        r0=0.1, r1=0.4
+    )
+    # Plot centromeric and pericentromeric satellites
+    kp <- kpPlotRegions(
+        kp,
+        reduce(chm13_censat_gr),
+        col="#235EA5",
+        border = NA,
+        data.panel = 2,
+        r0=0.5, r1=0.8
     )
     dev.off()
 })

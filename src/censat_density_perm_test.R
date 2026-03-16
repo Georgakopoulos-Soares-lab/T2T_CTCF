@@ -146,4 +146,4 @@ results <- do.call(rbind, results_list)
 results$padj <- p.adjust(results$pval, method = "BH")
 # Save results to a CSV file 
 # We will load these results in the code we use for the plotting of the densities across CenSat types
-write.csv(results, fs::path(res_path, "misc", "permtest_results.csv"), row.names = FALSE)
+write.csv(results, fs::path(res_path, "misc", "chm13_permtest_results.csv"), row.names = FALSE)

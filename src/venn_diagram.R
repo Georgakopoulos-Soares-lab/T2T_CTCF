@@ -18,8 +18,9 @@ suppressPackageStartupMessages({
 # Read the configuration YAML file that stores the paths of the directories used throughout the analysis
 config <- read_yaml("../config.yml")
 
-res = fs::path(config$res) # Path containing FIMO results for CHM13, HG002, T2T primates, and human pangenome asseblies
-plots = fs::path(config$plots) # Path to store any generated plots
+# Path containing FIMO results for CHM13, HG002, T2T primates, and human pangenome asseblies
+res <- fs::path(config$res)
+plots <- fs::path(config$plots) # Path to store any generated plots
 
 motifs <- c("MA0139.2", "MA1929.2", "MA1930.2")
 
@@ -41,13 +42,19 @@ chm13_liftover_grl <- endoapply(chm13_liftover_grl, function(gr) {
 })
 
 make_venn <- function(motif) {
-  # Extract the GRanges object for each motif across hg38, T2T-CHM13, and the liftover annotations
+  # Extract the GRanges object for each motif across
+  # hg38, T2T-CHM13, and the liftover annotations
+
   hg38_motif_gr <- hg38_grl[[motif]]
   chm13_liftover_motif_gr <- chm13_liftover_grl[[motif]]
   chm13_orig_motif_gr <- chm13_grl[[motif]]
   
   # Extract how many regions failed to liftover
-  failed_liftover_count <- length(setdiff(unique(chm13_orig_motif_gr$name), unique(chm13_liftover_motif_gr$name)))
+  failed_liftover_count <- length(
+    setdiff(
+      unique(chm13_orig_motif_gr$name), unique(chm13_liftover_motif_gr$name)
+    )
+  )
   failed_liftover_ids <- paste0("chm13_only_", seq_len(failed_liftover_count))
   
   # Find which hg38 CTCF sites overlap completely (type = within) with any T2T-CHM13 liftover region.
@@ -58,8 +65,8 @@ make_venn <- function(motif) {
   chm13_liftover_ids <- paste0("chm13_liftover_", seq_along(chm13_liftover_motif_gr))
   
   # Find which ids are shared between the two (these are the T2T-CHM13 CTCF sites that have a corresponding site in the hg38 genome)
-  overlap_hg38_idx <- unique(queryHits(hits))
-  overlap_chm13_liftover_idx <- unique(subjectHits(hits))
+  overlap_hg38_idx <- unique(GenomicRanges::queryHits(hits))
+  overlap_chm13_liftover_idx <- unique(GenomicRanges::subjectHits(hits))
   shared_ids <- paste0("shared_", seq_along(overlap_hg38_idx))
   
   # Create the sets and assign the unique and shared ids

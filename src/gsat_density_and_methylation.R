@@ -20,9 +20,9 @@ suppressPackageStartupMessages({
 # Read the configuration YAML file that stores the paths of the directories used throughout the analysis
 config <- read_yaml("../config.yml")
 
-fimo_res = fs::path(config$fimo_res) # Path containing FIMO results for CHM13, HG002, T2T primates, and human pangenome asseblies
-data = fs::path(config$data) # Path containing metadata for CHM13, HG002, T2T primates, and human pangenome asseblies
-plots = fs::path(config$plots) # Path to store any generated plots
+fimo_res <- fs::path(config$fimo_res) # Path containing FIMO results for CHM13, HG002, T2T primates, and human pangenome asseblies
+data <- fs::path(config$data) # Path containing metadata for CHM13, HG002, T2T primates, and human pangenome asseblies
+plots <- fs::path(config$plots) # Path to store any generated plots
 
 load_fimo_results <- function(genome, fimo_res_dir) {
   # Load all FIMO results for the specified genome
