@@ -517,15 +517,6 @@ pdf(
   height = 2.8
 )
 
-suppressWarnings({
-  rdna_genes <- makeGenesDataFromTxDb(
-    txdb,
-    karyoplot = kp,
-    plot.transcripts = TRUE,
-    plot.transcripts.structure = TRUE
-  )
-})
-
 rdna_gene <- GRanges("chr14:2189479-2205433")
 
 kp <- init_karyoplot(
@@ -535,6 +526,16 @@ kp <- init_karyoplot(
   data1inmargin = 2, ideogramheight = 5, cex = 0.5,
   tick.dist = 1e4, minor.tick.dist = 5e3, digits = 2
 )
+
+suppressWarnings({
+  rdna_genes <- makeGenesDataFromTxDb(
+    txdb,
+    karyoplot = kp,
+    plot.transcripts = TRUE,
+    plot.transcripts.structure = TRUE
+  )
+})
+
 window <- 1e3
 
 rdna_r0 <- 0.05
