@@ -380,7 +380,7 @@ dev.off()
 suppressMessages({
   suppressWarnings({
     txdb <- txdbmaker::makeTxDbFromGFF(
-      fs::path(data, "chm13", "chm13v2.0_RefSeq_Liftoff_v5.2.gff3"),
+      fs::path(data, "chm13", "chm13.draft_v2.0.gene_annotation.gff3"),
       format = "gff3",
       organism = "Homo sapiens",
       taxonomyId = 9606
@@ -388,7 +388,7 @@ suppressMessages({
   })
 })
 
-gff3 <- import(fs::path(data, "chm13", "chm13v2.0_RefSeq_Liftoff_v5.2.gff3"))
+gff3 <- import(fs::path(data, "chm13", "chm13.draft_v2.0.gene_annotation.gff3"))
 
 chr14_rdna_start <- start(
   chm13_censat_gr[

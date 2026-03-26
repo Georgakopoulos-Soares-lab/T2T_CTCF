@@ -41,3 +41,4 @@ dependencies:
   - bioconductor-txdbmaker
   - bioconductor-ggtree
   - r-ape
+  - bioconductor-complexheatmap
