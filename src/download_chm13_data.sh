@@ -10,9 +10,12 @@ chm13_urls=(
     # chrY in this file was assembled from sample HG002/NA24385. The original sequence accession numbers are shown in the FASTA header.
     "https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/analysis_set/chm13v2.0.fa.gz"
     
-    # GFF3 file with gene annotations
+    # GFF3 file with RefSeq gene annotations
     "https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/annotation/chm13v2.0_RefSeq_Liftoff_v5.2.gff3.gz"
     
+    # GFF3 file with GENCODE/CAT gene annotations (this is currently used throughout)
+    https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/annotation/chm13.draft_v2.0.gene_annotation.gff3
+
     # Cytobands
     "https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/annotation/chm13v2.0_cytobands_allchrs.bed"
 

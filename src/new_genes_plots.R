@@ -105,6 +105,55 @@ overlaps <- countOverlaps(gene_gr, chm13_gr, ignore.strand = TRUE)
 with_ctcf <- sum(overlaps > 0)
 without_ctcf <- sum(overlaps == 0)
 
+# Extract the names of T2T-CHM13 novel genes that carry CTCF sites
+genelist <- as.data.frame(gene_gr) |> 
+  filter(overlaps > 0) |>
+  pull(ID)
+
+# Create a stacked bar chart showing the distriburion of gene categories
+# for those genes
+new_genes_stacked <- chm13_only_genes |>
+  filter(gene_ID %in% genelist) |>
+  count(biotype) |>
+  mutate(pct = n / sum(n) * 100) |>
+  ggplot(aes(y = "", x = pct, fill = biotype)) +
+  geom_bar(stat = "identity", width = 0.6, color = "black", linewidth = 0.25) +
+  labs(
+    y = NULL,
+    x = "Percentage (%)",
+    fill = "Biotype",
+  ) +
+  theme_classic() +
+  scale_fill_manual(values = c(
+    "protein_coding" = "#2B5C8A",
+    "lncRNA" = "#8B7BAA",
+    "miRNA" = "#E8A838",
+    "rRNA" = "#D4884A",
+    "processed_pseudogene" = "#1B3A5C",
+    "unprocessed_pseudogene" = "#3D6E99",
+    "transcribed_unprocessed_pseudogene" = "#6A9BC5",
+    "transcribed_processed_pseudogene" = "#A3C4DE",
+    "StringTie" = "#5B5B5B",
+    "TEC" = "#C2A8D1",
+    "IG_C_gene" = "#4A7A6F"
+  )) +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "none",
+    panel.grid = element_blank(),
+    axis.title.x = element_text(size = 8),
+    axis.text.x = element_text(size = 6),
+  ) +
+  scale_y_discrete(expand = expansion(add = 0.1))
+
+ggsave(
+    fs::path(plots, "new_genes_stacked.pdf"),
+    new_genes_stacked,
+    width = 3,
+    height = 0.75
+)
+
 # Create a dataframe with the values of genes with CTCF vs those with no CTCF sites
 pie_df <- data.frame(
   category = c("With CTCF", "Without CTCF"),
@@ -125,7 +174,7 @@ pie <- ggplot(pie_df, aes(x = "", y = count, fill = category)) +
     size = 2
   ) +
   scale_fill_manual(values = c("With CTCF" = "#A3ABC0", "Without CTCF" = "#CD979A")) +
-  ggtitle("CTCF sites in novel\nT2T-CHM13 genes") +
+  ggtitle("Novel T2T-CHM13 genes\nwith CTCF sites") +
   theme_void() +
   theme(
     legend.position = "none",
@@ -191,5 +240,5 @@ ggsave(
     fs::path(plots, "new_genes_grouped.pdf"),
     motif_grouped,
     width = 3,
-    height = 3
+    height = 2.25
 )
