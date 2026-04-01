@@ -314,11 +314,12 @@ phylogenetic_tree_plot <- ggtree(
     fontsize = 2,
     linesize = 0.5
   )
+  
 suppressMessages({
   phylogenetic_tree_plot <- gheatmap(
     phylogenetic_tree_plot,
     density_df,
-    offset = 0.05,
+    offset = 0.06,
     width = 6,
     font.size = 2.5,
     colnames_angle = 25,
@@ -343,5 +344,5 @@ suppressMessages({
 ggsave(
   fs::path(plots, "density_across_primates.svg"),
   plot = phylogenetic_tree_plot,
-  width = 6,
+  width = 5.5,
   height = 2)
