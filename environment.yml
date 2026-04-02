@@ -44,3 +44,5 @@ dependencies:
   - bioconductor-ggtree
   - r-ape
   - r-zeallot
+  - r-ggbeeswarm
+  - r-magick

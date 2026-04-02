@@ -92,7 +92,7 @@ chrom_info <- seqinfo(conserv_bw)
 chr_conserv_means <- bplapply(
     seqnames(chrom_info), 
     function(chr) {
-        gr <- import(bw, which = GRanges(chr, IRanges(1, seqlengths(chrom_info)[chr])))
+        gr <- import(conserv_bw, which = GRanges(chr, IRanges(1, seqlengths(chrom_info)[chr])))
         mean(gr$score, na.rm = TRUE)
     }, 
     BPPARAM = MulticoreParam(workers = 24))
@@ -117,14 +117,14 @@ conserv_ridge <- chm13_df %>%
     geom_vline(
       xintercept = genome_mean,
       linetype = "dashed",
-      linewidth = 0.5,
-      color = "black"
+      linewidth = 0.75,
+      color = "#61573D"
     ) +
     geom_vline(
       xintercept = 0.75,
       linetype = "dashed",
-      linewidth = 0.5,
-      color = "purple"
+      linewidth = 0.75,
+      color = "#e1cc97"
     ) +
     scale_fill_manual(
       values = motif_palette
