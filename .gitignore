@@ -63,3 +63,5 @@ presentation.pptx
 ARIAL.TTF
 src/agat_log*
 src/dimelo*
+.DS_Store
+../.DS_Store
