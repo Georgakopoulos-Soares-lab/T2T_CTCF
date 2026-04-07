@@ -46,3 +46,4 @@ dependencies:
   - r-zeallot
   - r-ggbeeswarm
   - r-magick
+  - bcftools

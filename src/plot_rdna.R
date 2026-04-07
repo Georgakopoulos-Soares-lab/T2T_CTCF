@@ -38,7 +38,7 @@ load_fimo_results <- function(genome_res) {
     comment = "#", # Remove comment lines at the end of each FIMO file
     show_col_types = FALSE
   ) |>
-    select(-c(
+    dplyr::select(-c(
       motif_alt_id, score,
       `p-value`, `q-value`, matched_sequence
     )) # Remove unnecessary columns
