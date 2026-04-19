@@ -1,4 +1,2 @@
-res: "../res"
-fimo_res: "../res/fimo_res"
-data: "../data"
-plots: "../res/plots"
+res: "/Volumes/Intenso_SSD/Georgakopoulos_lab/T2T_CTCF/res"
+data: "/Volumes/Intenso_SSD/Georgakopoulos_lab/T2T_CTCF/data"

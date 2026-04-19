@@ -1,7 +1,9 @@
 #!/bin/bash
+set -euo pipefail
+
 # HG002 downloads
-mkdir -p ../data/hg002
-cd ../data/hg002
+mkdir -p ../../data/hg002
+cd ../../data/hg002
 
 # Create an array with the URLs of the metadata needed from HG002
 hg002_urls=(
@@ -44,3 +46,11 @@ find . -name "*.gz" | parallel -j 64 gunzip {}
 for bb in *.bb; do
     bigBedToBed "$bb" "${bb%.bb}.bed"
 done
+
+bgzip -@ 8 hg002v1.1.pat.fasta
+bgzip -@ 8 hg002v1.1.mat.fasta
+
+samtools faidx hg002v1.1.pat.fasta.gz
+samtools faidx hg002v1.1.mat.fasta.gz
+cut -f1,2 hg002v1.1.pat.fasta.gz.fai > hg002v1.1.pat.chrom.sizes
+cut -f1,2 hg002v1.1.mat.fasta.gz.fai > hg002v1.1.mat.chrom.sizes

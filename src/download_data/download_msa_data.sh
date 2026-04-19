@@ -1,7 +1,9 @@
 #!/bin/bash
+set -euo pipefail
+
 # Multiple sequences alignment downloads for CHM13 vs T2T primates and CHM13 vs human pangenome assemblies
-mkdir -p ../data/multiple_sequence_alignments
-cd ../data/multiple_sequence_alignments
+mkdir -p ../../data/multiple_sequence_alignments
+cd ../../data/multiple_sequence_alignments
 
 # Create an array with the URLs of the metadata needed from HG002
 msa_urls=(

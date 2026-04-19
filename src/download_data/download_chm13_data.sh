@@ -1,7 +1,9 @@
 #!/bin/bash
+set -euo pipefail
+
 # CHM13 downloads
-mkdir -p ../data/chm13
-cd ../data/chm13
+mkdir -p ../../data/chm13
+cd ../../data/chm13
 
 # Create an array with the URLs of the metadata needed from CHM13
 chm13_urls=(
@@ -57,3 +59,7 @@ printf '%s\n' "${chm13_urls[@]}" | parallel -j 8 wget
 
 pigz -d chm13v2.0.fa.gz # Decompress FASTA file
 pigz -d chm13v2.0_RefSeq_Liftoff_v5.2.gff3.gz # Decompress GFF3 file
+
+bgzip -@ 8 chm13v2.0.fa
+samtools faidx chm13v2.0.fa.gz
+cut -f1,2 chm13v2.0.fa.gz.fai > chm13v2.0.chrom.sizes

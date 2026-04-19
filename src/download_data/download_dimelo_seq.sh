@@ -1,7 +1,9 @@
 #!/bin/bash
+set -euo pipefail
+
 # CHM13 downloads
-mkdir -p ../data/dimelo_seq
-cd ../data/dimelo_seq
+mkdir -p ../../data/dimelo_seq
+cd ../../data/dimelo_seq
 
 # Create an array with the URLs of the metadata needed from CHM13
 dimelo_seq_urls=(

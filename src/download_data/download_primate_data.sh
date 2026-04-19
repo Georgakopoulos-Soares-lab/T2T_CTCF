@@ -1,7 +1,9 @@
 #!/bin/bash
+set -euo pipefail
+
 # T2T primate downloads
-mkdir -p ../data/primates
-cd ../data/primates
+mkdir -p ../../data/primates
+cd ../../data/primates
 
 mkdir -p SymSyn PonPyg PonAbe GorGor PanPan PanTro
 
@@ -50,7 +52,7 @@ primate_urls=(
     "https://genomeark.s3.amazonaws.com/species/Pan_troglodytes/mPanTro3/assembly_curated/repeats/mPanTro3_v2.0_CenSat_v2.0.bb"
 
     # Conservation scores of homo sapiens compared to the primate assemblies
-    # https://garrisonlab.s3.amazonaws.com/t2t-primates/wfmash-v0.13.0/conservation/approach2_with_cds/chm13_1/scores/approach2.scores_v0.3.bw
+    "https://garrisonlab.s3.amazonaws.com/t2t-primates/wfmash-v0.13.0/conservation/approach2_with_cds/chm13_1/scores/approach2.scores_v0.3.bw"
 )
 
 printf '%s\n' "${primate_urls[@]}" | parallel -j 12 wget
@@ -61,50 +63,44 @@ for bb in *.bb; do
     bigBedToBed "$bb" "${bb%.bb}.bed"
 done
 
-mv \
-    GCF_028878055.3_NHGRI_mSymSyn1-v2.1_pri_genomic.fna \
-    GCF_028878055.3_NHGRI_mSymSyn1-v2.1_pri_genomic.gff \
-    GCF_028878055.3_NHGRI_mSymSyn1-v2.1_pri_assembly_report.txt \
-    mSymSyn1_*.bed \
-    mSymSyn1_*.bb \
-    SymSyn/
+for fa in *.fna; do
+    base="${fa%_genomic.fna}"
+    report="${base}_assembly_report.txt"
+    
+    seqkit replace -p '^(\S+)' -r '{kv}' \
+        -k <(grep -v '^#' "$report" | awk -F'\t' '$7 != "na" {print $7"\t"$1}') \
+        "$fa" -o "${fa}.tmp" \
+    && mv "${fa}.tmp" "$fa"
+done
 
-mv \
-    GCF_028885625.2_NHGRI_mPonPyg2-v2.0_pri_genomic.fna \
-    GCF_028885625.2_NHGRI_mPonPyg2-v2.0_pri_genomic.gff \
-    GCF_028885625.2_NHGRI_mPonPyg2-v2.0_pri_assembly_report.txt \
-    mPonPyg2_*.bed \
-    mPonPyg2_*.bb \
-    PonPyg/
+for fa in *.fna; do
+  base="${fa%.fna}"
+  bgzip -@ 8 "$fa" && \
+  samtools faidx "${base}.fna.gz" && \
+  cut -f1,2 "${base}.fna.gz.fai" > "${base}.chrom.sizes"
+done
 
-mv \
-    GCF_028885655.2_NHGRI_mPonAbe1-v2.0_pri_genomic.fna \
-    GCF_028885655.2_NHGRI_mPonAbe1-v2.0_pri_genomic.gff \
-    GCF_028885655.2_NHGRI_mPonAbe1-v2.0_pri_assembly_report.txt \
-    mPonAbe1_*.bed \
-    mPonAbe1_*.bb \
-    PonAbe/
+species=(
+    "GCF_028878055.3_NHGRI_mSymSyn1-v2.1_pri|mSymSyn1|SymSyn"
+    "GCF_028885625.2_NHGRI_mPonPyg2-v2.0_pri|mPonPyg2|PonPyg"
+    "GCF_028885655.2_NHGRI_mPonAbe1-v2.0_pri|mPonAbe1|PonAbe"
+    "GCF_029281585.2_NHGRI_mGorGor1-v2.1_pri|mGorGor1|GorGor"
+    "GCF_029289425.2_NHGRI_mPanPan1-v2.0_pri|mPanPan1|PanPan"
+    "GCF_028858775.2_NHGRI_mPanTro3-v2.0_pri|mPanTro3|PanTro"
+)
 
-mv \
-    GCF_029281585.2_NHGRI_mGorGor1-v2.1_pri_genomic.fna \
-    GCF_029281585.2_NHGRI_mGorGor1-v2.1_pri_genomic.gff \
-    GCF_029281585.2_NHGRI_mGorGor1-v2.1_pri_assembly_report.txt \
-    mGorGor1_*.bed \
-    mGorGor1_*.bb \
-    GorGor/
+for entry in "${species[@]}"; do
+    IFS='|' read -r ncbi ga dir <<< "$entry"
+    mv \
+        "${ncbi}_genomic.fna.gz" \
+        "${ncbi}_genomic.fna.gz.fai" \
+        "${ncbi}_genomic.fna.gz.gzi" \
+        "${ncbi}_genomic.chrom.sizes" \
+        "${ncbi}_genomic.gff" \
+        "${ncbi}_assembly_report.txt" \
+        ${ga}_*.bed \
+        ${ga}_*.bb \
+        "$dir/"
+done
 
-mv \
-    GCF_029289425.2_NHGRI_mPanPan1-v2.0_pri_genomic.fna \
-    GCF_029289425.2_NHGRI_mPanPan1-v2.0_pri_genomic.gff \
-    GCF_029289425.2_NHGRI_mPanPan1-v2.0_pri_assembly_report.txt \
-    mPanPan1_*.bed \
-    mPanPan1_*.bb \
-    PanPan/
-
-mv \
-    GCF_028858775.2_NHGRI_mPanTro3-v2.0_pri_genomic.fna \
-    GCF_028858775.2_NHGRI_mPanTro3-v2.0_pri_genomic.gff \
-    GCF_028858775.2_NHGRI_mPanTro3-v2.0_pri_assembly_report.txt \
-    mPanTro3_*.bed \
-    mPanTro3_*.bb \
-    PanTro/
+# Implement GFF renaming

@@ -65,3 +65,6 @@ src/agat_log*
 src/dimelo*
 .DS_Store
 ../.DS_Store
+src/test.ipynb
+notebook.ipynb
+notebook2.ipynb
