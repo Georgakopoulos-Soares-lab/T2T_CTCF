@@ -47,3 +47,4 @@ dependencies:
   - r-ggbeeswarm
   - r-magick
   - bcftools
+  - ucsc-bigwiginfo
