@@ -126,7 +126,7 @@ run_permtest <- function(motif, region) {
     verbose = FALSE,
     mc.set.seed = FALSE, # We remove the seed here, so that each core uses the same seed defined in the start
     force.parallel = TRUE,
-    mc.cores = 2
+    mc.cores = 130
   )
 
   # Store the results in a dataframe
@@ -167,6 +167,6 @@ results <- do.call(rbind, results_list)
 # we use for the plotting of the densities across CenSat types
 write.csv(
   results,
-  fs::path(res_path, "misc", "chm13_permtest_results.csv"),
+  fs::path(res_path, "misc", "chm13_permtest_results_per_chrom.csv"),
   row.names = FALSE
 )
