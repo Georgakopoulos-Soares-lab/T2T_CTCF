@@ -48,3 +48,6 @@ dependencies:
   - r-magick
   - bcftools
   - ucsc-bigwiginfo
+  - gff3sort
+  - perl-sort-naturally
+  - perl

@@ -11,6 +11,7 @@ suppressPackageStartupMessages({
     library("tidyr", quietly = TRUE, verbose = FALSE)
     library("ggplot2", quietly = TRUE, verbose = FALSE)
     library("BiocParallel", quietly = TRUE, verbose = FALSE)
+    library("ggridges", quietly = TRUE, verbose = FALSE)
   })
 })
 
@@ -95,7 +96,7 @@ genome_mean_conservation <- 0.224605
 
 # A mapping that goes from abbreviations to full names (used for plotting)
 censat_mapping <- c(
-  "ct" = "Centromeric transitions",
+  "ct" = "Centromeric\ntransitions",
   "censat" = "Other satellites",
   "gsat" = "γSat",
   "bsat" = "βSat",
@@ -170,16 +171,6 @@ censat_conserv <- ggplot(
     y = censat_type
   )
 ) +
-  geom_density_ridges(
-    fill = "#727C94",
-    color = "black",
-    alpha = 1,
-    scale = 1,
-    from = 0,
-    to = 1,
-    linewidth = 0.75,
-    rel_min_height = 0.01
-  ) +
   geom_vline(
     xintercept = genome_mean_conservation,
     linetype = "dashed",
@@ -192,9 +183,19 @@ censat_conserv <- ggplot(
     linewidth = 0.75,
     color = "#e1cc97"
   ) +
+  geom_density_ridges(
+    fill = "#727C94",
+    color = "black",
+    alpha = 1,
+    scale = 1,
+    from = 0,
+    to = 1,
+    linewidth = 0.75,
+    rel_min_height = 0.01
+  ) +
   geom_text(
     data = ctcf_counts,
-    aes(x = 0.82, y = censat_type, label = label),
+    aes(x = 0.75, y = censat_type, label = label),
     hjust = 0, vjust = -0.6,
     size = 2,
     inherit.aes = FALSE
@@ -205,7 +206,7 @@ censat_conserv <- ggplot(
     title = NULL
   ) +
   scale_y_discrete(limits = c(
-    "rDNA array", "Other satellites", "Centromeric transitions",
+    "rDNA array", "Other satellites", "Centromeric\ntransitions",
     "HSat3", "HSat2", "HSat1B", "HSat1A", "γSat", "βSat",
     "αSat divergent", "αSat monomeric", "αSat inactive HOR",
     "αSat active HOR"
@@ -224,6 +225,6 @@ censat_conserv <- ggplot(
 ggsave(
   fs::path(plots, "primate_censat_conserv.svg"),
   censat_conserv,
-  width = 3,
-  height = 5
+  width = 2.5,
+  height = 4
 )

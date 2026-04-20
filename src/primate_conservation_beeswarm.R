@@ -148,9 +148,10 @@ conserv_beeswarm <- chm13_df |>
   )
 
 ggsave(
-  fs::path(plots, "conservation_beeswarm.pdf"),
+  fs::path(plots, "conservation_beeswarm.png"),
   plot = conserv_beeswarm,
   width = 3,
   height = 2,
+  dpi = 1200,
   bg = "transparent"
 )

@@ -73,6 +73,41 @@ for fa in *.fna; do
     && mv "${fa}.tmp" "$fa"
 done
 
+for gff in *.gff; do
+    base="${gff%_genomic.gff}"
+    report="${base}_assembly_report.txt"
+
+    awk -F'\t' 'BEGIN{OFS="\t"}
+        NR==FNR {
+            if ($0 !~ /^#/ && $7 != "na") map[$7] = $1
+            next
+        }
+
+        /^##sequence-region/ {
+            n = split($0, a, /[ \t]+/)
+            if (a[2] in map) a[2] = map[a[2]]
+            line = a[1]
+            for (i=2; i<=n; i++) line = line " " a[i]
+            print line
+            next
+        }
+
+        /^#/ { print; next }
+
+        {
+            if ($1 in map) $1 = map[$1]
+            print
+        }
+    ' "$report" "$gff" > "${gff}.tmp" && mv "${gff}.tmp" "$gff"
+
+    gff3sort.pl --precise "$gff" > "${base}.sorted.gff"
+
+    mv "${base}.sorted.gff" "$gff"
+
+    bgzip -@ 8 "$gff"
+    tabix -p gff "${gff}.gz"
+done
+
 for fa in *.fna; do
   base="${fa%.fna}"
   bgzip -@ 8 "$fa" && \
