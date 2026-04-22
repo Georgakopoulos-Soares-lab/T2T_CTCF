@@ -51,3 +51,5 @@ dependencies:
   - gff3sort
   - perl-sort-naturally
   - perl
+  - bioconductor-enrichedheatmap
+  - bioconductor-genomation
