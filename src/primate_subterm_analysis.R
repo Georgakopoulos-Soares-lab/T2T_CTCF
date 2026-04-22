@@ -159,11 +159,9 @@ plot_subterm_profile <- function(
     ggplot2::theme_classic() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_blank(),
-      axis.text.y = if (show_y_labels) {
-        ggplot2::element_text(size = 6)
-      } else {
-        ggplot2::element_blank()
-      },
+      axis.text.y = ggplot2::element_text(
+        size = 6
+      ),
       axis.title.y = if (show_y_labels) {
         ggplot2::element_text(size = 8)
       } else {
@@ -235,11 +233,9 @@ plot_subterm_profile <- function(
         color = "gray70",
         linewidth = 0.1
       ),
-      axis.text.y = if (show_y_labels) {
-        ggplot2::element_text(size = 6)
-      } else {
-        ggplot2::element_blank()
-      },
+      axis.text.y = ggplot2::element_text(
+        size = 6
+      ),
       axis.title.y = if (show_y_labels) {
         ggplot2::element_text(size = 8)
       } else {
