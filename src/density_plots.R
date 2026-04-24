@@ -217,8 +217,8 @@ density_bars <- ggplot(
   censat_plot_df, aes(x = density_per_Mb, y = type, fill = motif)
 ) +
   geom_vline(
-    data = chm13_genome_densities, 
-    aes(xintercept = density_per_Mb, color = motif), 
+    data = chm13_genome_densities,
+    aes(xintercept = density_per_Mb, color = motif),
     linetype = "dashed", linewidth = 0.4, alpha = 0.9
   ) +
   geom_col(position = "dodge", color = "black", linewidth = 0.25) +
