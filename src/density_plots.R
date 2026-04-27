@@ -276,19 +276,20 @@ chm13_censat_ctcf_overlaps_summary$type <- censat_mapping[chm13_censat_ctcf_over
 # Remove chr prefix for the plot
 chm13_censat_ctcf_overlaps_summary$seqnames <- gsub("^chr", "", chm13_censat_ctcf_overlaps_summary$seqnames)
 
-chm13_censat_ctcf_overlaps_summary <- inner_join(
+chm13_censat_ctcf_overlaps_summary_full <- inner_join(
   chm13_censat_ctcf_overlaps_summary,
   censat_per_chrom_perm_res,
   by = c("seqnames", "type")
 )
-chm13_censat_ctcf_overlaps_summary <- chm13_censat_ctcf_overlaps_summary |>
+
+chm13_censat_ctcf_overlaps_summary_full <- chm13_censat_ctcf_overlaps_summary_full |>
   mutate(density = ifelse(density == 0, NA, density)) |>
   complete(seqnames, type) # Add any missing combinations of type x chromosome
 
 # Define chromosome order for the plot to be alphanumeric
 chr_order <- c(as.character(1:22), "X", "Y")
-chm13_censat_ctcf_overlaps_summary$seqnames <- factor(
-  chm13_censat_ctcf_overlaps_summary$seqnames,
+chm13_censat_ctcf_overlaps_summary_full$seqnames <- factor(
+  chm13_censat_ctcf_overlaps_summary_full$seqnames,
   levels = chr_order
 )
 
@@ -296,7 +297,7 @@ chm13_censat_ctcf_overlaps_summary$seqnames <- factor(
 
 # Heatmap plot showing combined density (all motif types) across each chromosome
 density_heatmap <- ggplot(
-  chm13_censat_ctcf_overlaps_summary,
+  chm13_censat_ctcf_overlaps_summary_full,
   aes(x = seqnames, y = type, fill = density)) +
   geom_tile(color = "black", linewidth = 0.15) +
   scale_fill_viridis_c(

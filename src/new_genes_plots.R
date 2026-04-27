@@ -1,20 +1,20 @@
 # Load necessary libraries
 suppressPackageStartupMessages({
-    suppressWarnings({
-        library("purrr", quietly = TRUE, verbose = FALSE)
-        library("dplyr", quietly = TRUE, verbose = FALSE)
-        library("GenomicRanges", quietly = TRUE, verbose = FALSE)
-        library("readr", quietly = TRUE, verbose = FALSE)
-        library("fs", quietly = TRUE, verbose = FALSE)
-        library("yaml", quietly = TRUE, verbose = FALSE)
-        library("rtracklayer", quietly = TRUE, verbose = FALSE)
-        library("tidyr", quietly = TRUE, verbose = FALSE)
-        library("ggplot2", quietly = TRUE, verbose = FALSE)
-        library("ComplexHeatmap", quietly = TRUE, verbose = FALSE)
-        library("circlize", quietly = TRUE, verbose = FALSE)
-        library("svglite", quietly = TRUE, verbose = FALSE)
-        library("stringr", quietly = TRUE, verbose = FALSE)
-    })
+  suppressWarnings({
+    library("purrr", quietly = TRUE, verbose = FALSE)
+    library("dplyr", quietly = TRUE, verbose = FALSE)
+    library("GenomicRanges", quietly = TRUE, verbose = FALSE)
+    library("readr", quietly = TRUE, verbose = FALSE)
+    library("fs", quietly = TRUE, verbose = FALSE)
+    library("yaml", quietly = TRUE, verbose = FALSE)
+    library("rtracklayer", quietly = TRUE, verbose = FALSE)
+    library("tidyr", quietly = TRUE, verbose = FALSE)
+    library("ggplot2", quietly = TRUE, verbose = FALSE)
+    library("ComplexHeatmap", quietly = TRUE, verbose = FALSE)
+    library("circlize", quietly = TRUE, verbose = FALSE)
+    library("svglite", quietly = TRUE, verbose = FALSE)
+    library("stringr", quietly = TRUE, verbose = FALSE)
+  })
 })
 
 # Read the configuration YAML file that stores the paths of the directories used throughout the analysis
@@ -65,12 +65,14 @@ chm13_gr <- load_fimo_results(fs::path(fimo_res, "chm13"))
 
 # Load the IDs for genes present only in the T2T-CHM13 assembly
 chm13_only_genes <- read_csv(
-    fs::path(data, "chm13", "chm13_new_genes.csv"),
-    show_col_types = FALSE
+  fs::path(data, "chm13", "chm13_new_genes.csv"),
+  show_col_types = FALSE
 )
 
 # Load the GENCODE GFF3 file and convert to dataframe
-gencode_gff3 <- import(fs::path(data, "chm13", "chm13.draft_v2.0.gene_annotation.gff3"))
+gencode_gff3 <- import(
+  fs::path(data, "chm13", "chm13.draft_v2.0.gene_annotation.gff3")
+)
 gencode_df <- as.data.frame(gencode_gff3)
 
 # Extract gene IDs and the corresponding rows from the GENCODE file
@@ -148,10 +150,10 @@ new_genes_stacked <- chm13_only_genes |>
   scale_y_discrete(expand = expansion(add = 0.1))
 
 ggsave(
-    fs::path(plots, "new_genes_stacked.pdf"),
-    new_genes_stacked,
-    width = 3,
-    height = 0.75
+  fs::path(plots, "new_genes_stacked.pdf"),
+  new_genes_stacked,
+  width = 3,
+  height = 0.75
 )
 
 # Create a dataframe with the values of genes with CTCF vs those with no CTCF sites
@@ -162,7 +164,14 @@ pie_df <- data.frame(
 
 # Calculate percentages
 pie_df$percentage <- round(pie_df$count / sum(pie_df$count) * 100, 2)
-pie_df$label <- paste0(pie_df$category, "\n", pie_df$count, " (", pie_df$percentage, "%)")
+pie_df$label <- paste0(
+  pie_df$category,
+  "\n",
+  pie_df$count,
+  " (",
+  pie_df$percentage,
+  "%)"
+)
 
 # Plot pie chart and save 
 pie <- ggplot(pie_df, aes(x = "", y = count, fill = category)) +
@@ -173,7 +182,9 @@ pie <- ggplot(pie_df, aes(x = "", y = count, fill = category)) +
     position = position_stack(vjust = 0.5),
     size = 2
   ) +
-  scale_fill_manual(values = c("With CTCF" = "#A3ABC0", "Without CTCF" = "#CD979A")) +
+  scale_fill_manual(
+    values = c("With CTCF" = "#A3ABC0", "Without CTCF" = "#CD979A")
+  ) +
   ggtitle("Novel T2T-CHM13 genes\nwith CTCF sites") +
   theme_void() +
   theme(
@@ -189,7 +200,10 @@ ggsave(
 )
 
 # Create a GRanges object from the features of the new genes
-new_gene_features_gr <- makeGRangesFromDataFrame(new_gene_features, keep.extra.columns = TRUE)
+new_gene_features_gr <- makeGRangesFromDataFrame(
+  new_gene_features,
+  keep.extra.columns = TRUE
+)
 
 # Find which overlap with CTCF and convert to a dataframe
 hits <- findOverlaps(chm13_gr, new_gene_features_gr, ignore.strand = TRUE)
@@ -237,8 +251,8 @@ motif_grouped <- ggplot(overlap_summary, aes(x = count, y = feature_type, fill =
   )
 
 ggsave(
-    fs::path(plots, "new_genes_grouped.pdf"),
-    motif_grouped,
-    width = 3,
-    height = 2.25
+  fs::path(plots, "new_genes_grouped.pdf"),
+  motif_grouped,
+  width = 3,
+  height = 2.25
 )

@@ -63,36 +63,8 @@ load_fimo_results <- function(genome_res) {
   fimo_gr
 }
 
+# Load the CHM13 FIMO results
 chm13_gr <- load_fimo_results(fs::path(fimo_res, "chm13"))
-
-# Store the BigWig file containg conservation
-# scores among primates as a pointer for fast access
-conserv_bw <- BigWigFile(fs::path(data, "primates", "approach2.scores_v0.3.bw"))
-
-# Sort CHM13 FIMO results by genomic coordinates
-# to improve the I/O speed of the conservation BigWig
-chm13_gr <- sort(chm13_gr)
-
-# Split by chromosome for parallel processing
-by_chr <- split(chm13_gr, seqnames(chm13_gr))
-
-# Collect conservation scores for each CTCF site
-# For each site, we report the mean score across the site's length
-conserv_scores <- bplapply(
-  by_chr,
-  function(chr_gr) {
-    conserv_summary <- summary(conserv_bw, which = chr_gr, type = "mean")
-    vapply(conserv_summary, function(x) x$score[1], numeric(1))
-  },
-  BPPARAM = SnowParam(workers = 6)
-)
-
-# Add the conservation score to the GRanges object and convert to a dataframe
-chm13_gr$mean_conservation <- unlist(conserv_scores)
-chm13_df <- as.data.frame(chm13_gr)
-
-# This is obtained from UCSC's bigWigInfo
-genome_mean_conservation <- 0.224605
 
 # A mapping that goes from abbreviations to full names (used for plotting)
 censat_mapping <- c(
@@ -126,6 +98,60 @@ chm13_censat_gr$type[chm13_censat_gr$type == "hor" & grepl("L\\)$", chm13_censat
 
 # Drop unnecessary collumns
 mcols(chm13_censat_gr)[, c("score", "itemRgb", "thick")] <- NULL
+
+# Store the BigWig file containg conservation
+# scores among primates as a pointer for fast access
+conserv_bw <- BigWigFile(fs::path(data, "primates", "approach2.scores_v0.3.bw"))
+
+# Create a function which adds mean conservation scores
+# to a GRanges object
+add_mean_conservation <- function(
+  gr,
+  conserv_bw
+) {
+
+  # Sort to improve BigWig I/O locality
+  gr <- sort(gr)
+
+  # Preserve original order so we can map scores back correctly
+  gr$.orig_idx <- seq_along(gr)
+
+  # Split by chromosome for parallel processing
+  by_chr <- split(gr, GenomeInfoDb::seqnames(gr))
+  by_chr <- by_chr[lengths(by_chr) > 0]
+
+  scores_list <- BiocParallel::bplapply(
+    by_chr,
+    function(chr_gr) {
+      s <- summary(conserv_bw, which = chr_gr, type = "mean")
+      idx <- chr_gr$.orig_idx
+      vals <- vapply(s, function(x) x$score[1], numeric(1))
+      data.frame(idx = idx, score = vals)
+    },
+    BPPARAM = BiocParallel::SnowParam(workers = 6)
+  )
+
+  combined <- do.call(rbind, scores_list)
+  scores <- combined$score[order(combined$idx)]
+
+  gr <- gr[order(gr$.orig_idx)]
+  gr$.orig_idx <- NULL
+  gr$mean_conservation <- scores
+
+  gr
+}
+
+# Add conservation scores to both FIMO results and
+# CenSat regions
+chm13_censat_gr <- add_mean_conservation(
+  chm13_censat_gr,
+  conserv_bw
+)
+
+chm13_gr <- add_mean_conservation(
+  chm13_gr,
+  conserv_bw
+)
 
 # Find overlaps between CTCF sites and CenSat regions
 hits <- findOverlaps(chm13_gr, chm13_censat_gr, ignore.strand = TRUE)
@@ -163,12 +189,67 @@ ctcf_counts <- ctcf_sites_df |>
   tidyr::complete(censat_type = unname(censat_mapping), fill = list(n = 0)) |>
   dplyr::mutate(label = paste0("n=", n))
 
+# Add full names to each CenSat type
+chm13_censat_gr$censat_type <- censat_mapping[chm13_censat_gr$type]
+
+# Combine conservation data for the full CenSat regions
+# and the CTCF sites within them
+plot_df <- rbind(
+  ctcf_sites_df |>
+    dplyr::select(
+      c("censat_type", "mean_conservation")
+    ) |>
+    dplyr::mutate(cat = "CTCF"),
+  as.data.frame(chm13_censat_gr) |>
+    dplyr::select(
+      c("censat_type", "mean_conservation")
+    ) |>
+    dplyr::mutate(cat = "CenSat")
+)
+
+# Order the categories so that the CTCF density line
+# overlays the CenSat background
+plot_df$cat <- factor(plot_df$cat, levels = c("CenSat", "CTCF"))
+
+# This is obtained from UCSC's bigWigInfo
+genome_mean_conservation <- 0.224605
+
+# Perform Kolmogorov-Smirnoff test to check if the distributions of
+# conservation scores differ between CenSat regions and CTCF sites
+ks_results <- plot_df |>
+  group_by(censat_type) |>
+  filter(any(cat == "CTCF") & any(cat == "CenSat")) |>
+  summarise(
+    test = list(ks.test(
+      mean_conservation[cat == "CTCF"],
+      mean_conservation[cat == "CenSat"]
+    )),
+    n_ctcf = sum(cat == "CTCF"),
+    n_censat = sum(cat == "CenSat"),
+    .groups = "drop"
+  ) |>
+  mutate(
+    D = map_dbl(test, "statistic"),
+    p_value = map_dbl(test, "p.value"),
+    p_adj = p.adjust(p_value, method = "BH")
+  ) |>
+  select(-test) |>
+  mutate(
+    sig = case_when(
+      p_adj < 0.001 ~ "***",
+      p_adj < 0.01 ~ "**",
+      p_adj < 0.05 ~ "*",
+      TRUE ~ ""
+    )
+  )
+
 # Create a ridgeline plot showing the density of points based on conservation scores
 censat_conserv <- ggplot(
-  ctcf_sites_df,
+  plot_df,
   aes(
     x = mean_conservation,
-    y = censat_type
+    y = censat_type,
+    fill = cat
   )
 ) +
   geom_vline(
@@ -184,9 +265,8 @@ censat_conserv <- ggplot(
     color = "#e1cc97"
   ) +
   geom_density_ridges(
-    fill = "#727C94",
     color = "black",
-    alpha = 1,
+    alpha = 0.6,
     scale = 1,
     from = 0,
     to = 1,
@@ -198,6 +278,14 @@ censat_conserv <- ggplot(
     aes(x = 0.75, y = censat_type, label = label),
     hjust = 0, vjust = -0.6,
     size = 2,
+    inherit.aes = FALSE
+  ) +
+  geom_text(
+    data = ks_results,
+    aes(x = 0.75, y = censat_type, label = sig),
+    hjust = 0, vjust = -1,
+    size = 2.5,
+    fontface = "bold",
     inherit.aes = FALSE
   ) +
   labs(
@@ -213,18 +301,27 @@ censat_conserv <- ggplot(
   ),
   expand = expansion(add = c(0.1, 1))
   ) +
+  scale_fill_manual(
+    values = c(
+      "CTCF" = "#616883",
+      "CenSat" = "gray70"
+    )
+  ) +
   theme_classic() +
   theme(
     panel.grid.major.y = element_line(color = "gray70", linewidth = 0.3),
     panel.grid.major.x = element_line(color = "gray70", linewidth = 0.3),
     axis.text.x = element_text(size = 6),
     axis.title.x = element_text(size = 8),
-    axis.text.y = element_text(size = 8)
+    axis.text.y = element_text(size = 8),
+    legend.position = "none",
+    plot.background = NULL
   )
 
 ggsave(
   fs::path(plots, "primate_censat_conserv.svg"),
   censat_conserv,
   width = 2.5,
-  height = 4
+  height = 4,
+  bg = "transparent"
 )
