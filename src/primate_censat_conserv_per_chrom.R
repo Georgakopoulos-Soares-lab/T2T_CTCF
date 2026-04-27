@@ -250,6 +250,24 @@ plot_df$censat_type <- factor(
   levels = censat_order
 )
 
+ctcf_counts$censat_type <- factor(
+  ctcf_counts$censat_type,
+  levels = censat_order
+)
+
+# Order also chromosomes
+chrom_order <- rev(c(as.character(1:22), "X", "Y"))
+
+plot_df$seqnames <- factor(
+  gsub("^chr", "", plot_df$seqnames),
+  levels = chrom_order
+)
+
+ctcf_counts$seqnames <- factor(
+  gsub("^chr", "", ctcf_counts$seqnames),
+  levels = chrom_order
+)
+
 # Plot the distribution of conservation scores for each chromosome
 # across CenSat types
 facet_grid <- ggplot(
@@ -288,7 +306,7 @@ facet_grid <- ggplot(
     limits = c(0, 1),
     expand = expansion(add = c(0, 0.15))
   ) +
-  theme_classic() +
+  theme_bw() +
   theme(
     panel.grid.major.y = element_line(color = "gray70", linewidth = 0.3),
     panel.grid.major.x = element_line(color = "gray70", linewidth = 0.3),
