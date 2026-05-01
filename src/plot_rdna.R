@@ -66,7 +66,7 @@ chm13_gr <- load_fimo_results(fs::path(fimo_res, "chm13"))
 
 # Load CHM13 chromosome sizes
 chm13_chrom_sizes <- read_tsv(
-  fs::path(data, "chm13", "chm13v2.0.fa.chrom.sizes"),
+  fs::path(data, "chm13", "chm13v2.0.chrom.sizes"),
   show_col_types = FALSE,
   col_names = c("chr", "size")
 )

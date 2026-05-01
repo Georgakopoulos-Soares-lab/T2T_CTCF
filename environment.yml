@@ -53,3 +53,5 @@ dependencies:
   - perl
   - bioconductor-enrichedheatmap
   - bioconductor-genomation
+  - r-rlist
+  - r-ggforce

@@ -74,8 +74,8 @@ censat_mapping <- c(
   "bsat" = "βSat",
   "hsat3" = "HSat3",
   "hsat2" = "HSat2",
-  "hsat1b" = "HSat1B",
-  "hsat1a" = "HSat1A",
+  "hsat1b" = "HSat1",
+  "hsat1a" = "HSat1",
   "mon" = "αSat monomeric",
   "dhor" = "αSat divergent",
   "hor" = "αSat inactive HOR",
@@ -190,26 +190,15 @@ ctcf_sites_df <- as.data.frame(chm13_gr)
 # Drop sites that do not overlap with CenSat types
 ctcf_sites_df <- ctcf_sites_df |> filter(censat_type != "NA")
 
-# In order for the plots to work in a facet grid
-# we group HSat1A and HSat1B in one category
-ctcf_sites_df$censat_type <- gsub(
-  "HSat1[AB]",
-  "HSat1",
-  ctcf_sites_df$censat_type
-)
-
-# Replace HSats also in the CenSat GRanges
-chm13_censat_gr$censat_type <- gsub(
-  "HSat1[AB]",
-  "HSat1",
-  chm13_censat_gr$censat_type
-)
-
 # Count how many CTCF sites exist per CenSat type per chromosome
 ctcf_counts <- ctcf_sites_df |>
   dplyr::group_by(seqnames, censat_type) |>
   dplyr::summarise(n_sites = n(), .groups = "drop") |>
-  tidyr::complete(seqnames, censat_type, fill = list(n_sites = 0)) |>
+  tidyr::complete(
+    seqnames,
+    censat_type = unname(censat_mapping),
+    fill = list(n_sites = 0)
+  ) |>
   dplyr::mutate(label = paste0("n=", n_sites))
 
 # Remove chr prefix from chromosomes for ease of plotting
