@@ -150,3 +150,11 @@ Edit `config.yml` to set the paths for your system:
 ## License
 
 This project is licensed under the [GNU General Public License v3.0](LICENSE).
+
+
+
+Preprocess the pangenome VCF with:
+bcftools norm --threads 6 -Ou -m - --check-ref x -f ../chm13/chm13v2.0.fa.gz hprc-v2.0-mc-chm13.wave.vcf.gz \
+  | bcftools +fill-tags -Ou -- -t AC,AN,AF,NS \
+  | bcftools view -Ou -e 'INFO/AC=0' \
+  | bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%INFO/AF\n' > muts_hprc.tsv

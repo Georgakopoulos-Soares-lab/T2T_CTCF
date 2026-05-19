@@ -12,6 +12,8 @@ hg38_urls=(
     
     # GFF3 files with gene annotations
     https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_genomic.gff.gz
+    
+    https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.40_GRCh38.p14/GCF_000001405.40_GRCh38.p14_assembly_report.txt 
 )
 
 printf '%s\n' "${hg38_urls[@]}" | parallel -j 2 wget

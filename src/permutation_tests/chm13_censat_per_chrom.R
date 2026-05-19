@@ -155,7 +155,7 @@ for (chrom in chm13_chrom_sizes$chrom) {
     message(sprintf("Running: %s x %s", chrom, type))
     res <- run_permtest(motifs_chr, censat_type)
     res$chrom <- chrom
-    res$type  <- type
+    res$type <- type
     results_list[[length(results_list) + 1]] <- res
   }
 }

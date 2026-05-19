@@ -84,14 +84,18 @@ chm13_censat_gr <- import(
   format = "BED"
 )
 
-# Extract CenSat type from the names 
+# Extract CenSat type from the names
 chm13_censat_gr$type <- tolower(sub("_.*", "", chm13_censat_gr$name))
+chm13_censat_gr$annotation <- tolower(stringr::str_extract(
+  chm13_censat_gr$name, "(?<=\\().*?(?=\\))"
+))
 
-# If an HOR has L at the end of the name then this indicates that this is the active alpha-satellite HOR
-chm13_censat_gr$type[chm13_censat_gr$type == "hor" & grepl("L\\)$", chm13_censat_gr$name)] <- "hor_l"
+chm13_censat_gr$annotation[is.na(chm13_censat_gr$annotation)] <- "No annotation"
 
-# Drop unnecessary collumns
-mcols(chm13_censat_gr)[, c("score", "itemRgb", "thick")] <- NULL
+# Define active alpha satellites based on CenSat color
+chm13_censat_gr$type[
+  chm13_censat_gr$type == "hor" & chm13_censat_gr$itemRgb == "#990000"
+] <- "hor_l"
 
 # Add a column specifing the region's length
 chm13_censat_gr$length <- width(chm13_censat_gr)
