@@ -67,23 +67,6 @@ load_fimo_results <- function(genome_res) {
 # Load the CHM13 FIMO results
 chm13_gr <- load_fimo_results(fs::path(fimo_res, "chm13"))
 
-# A mapping that goes from abbreviations to full names (used for plotting)
-censat_mapping <- c(
-  "ct" = "Centromeric transitions",
-  "censat" = "Other satellites",
-  "gsat" = "γSat",
-  "bsat" = "βSat",
-  "hsat3" = "HSat3",
-  "hsat2" = "HSat2",
-  "hsat1b" = "HSat1B",
-  "hsat1a" = "HSat1A",
-  "mon" = "αSat monomeric",
-  "dhor" = "αSat divergent",
-  "hor" = "αSat inactive HOR",
-  "hor_l" = "αSat active HOR",
-  "rdna" = "rDNA array"
-)
-
 # Load CHM13 CenSat annotations
 chm13_censat_gr <- import(
   fs::path(data, "chm13", "chm13v2.0_censat_v2.1.bed"),
@@ -92,11 +75,6 @@ chm13_censat_gr <- import(
 
 # Extract CenSat type from the names
 chm13_censat_gr$type <- tolower(sub("_.*", "", chm13_censat_gr$name))
-chm13_censat_gr$annotation <- tolower(stringr::str_extract(
-  chm13_censat_gr$name, "(?<=\\().*?(?=\\))"
-))
-
-chm13_censat_gr$annotation[is.na(chm13_censat_gr$annotation)] <- "No annotation"
 
 # Define active alpha satellites based on CenSat color
 chm13_censat_gr$type[
@@ -177,10 +155,10 @@ windows$type[labels$idx] <- as.character(labels$type)
 # Create GC content bins that increment by 1%
 gc_bins  <- quantile(
   mcols(windows)$gc_content,
-  probs = seq(0, 1, 0.1)
+  probs = seq(0, 1, 0.01)
 )
 
-# Create CpG content bins that increment by 1%
+# Create CpG content bins that increment by 10%
 cpg_bins <- quantile(
   mcols(windows)$cpg_content,
   probs = seq(0, 1, 0.1)
@@ -218,6 +196,7 @@ for (censat_type in censat_types) {
   # Find which bins are needed for the permutation and keep them as a pool
   acceptable_bins <- unique(region_windows$bin)
 
+  # Create a pool with the acceptable regions where the random shuffling can occur
   pool <- windows |>
     filter(bin %in% acceptable_bins)
 
@@ -250,8 +229,10 @@ for (censat_type in censat_types) {
 
       # Store the results in a dataframe
       key <- paste(censat_type, motif, sep = "__")
-      results_list[[key]] <- data.frame(
-        pval = pt$numOverlaps$pval,
+      results_list[[key]] <- tibble(
+        censat = censat_type,
+        motif  = motif,
+        pval   = pt$numOverlaps$pval,
         zscore = pt$numOverlaps$zscore
       )
     }))
@@ -259,7 +240,7 @@ for (censat_type in censat_types) {
 }
 
 # Create the final dataframe
-results_df <- dplyr::bind_rows(results_list)
+results_df <- dplyr::bind_rows(results_list, .id = "key")
 
 # Save results to a CSV file
 # We will load these results in the code
