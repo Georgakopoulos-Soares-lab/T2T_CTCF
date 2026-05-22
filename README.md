@@ -158,3 +158,11 @@ bcftools norm --threads 6 -Ou -m - --check-ref x -f ../chm13/chm13v2.0.fa.gz hpr
   | bcftools +fill-tags -Ou -- -t AC,AN,AF,NS \
   | bcftools view -Ou -e 'INFO/AC=0' \
   | bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%INFO/AF\n' > muts_hprc.tsv
+
+
+  # Create env with Python 3.9 and compatible pinned versions
+conda create -n gat python=3.9 "cython<3" "numpy<1.24" -y
+conda activate gat
+
+# Install gat
+CC=gcc pip install gat --no-build-isolation
