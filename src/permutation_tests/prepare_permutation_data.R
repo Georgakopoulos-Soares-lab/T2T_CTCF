@@ -10,7 +10,6 @@ suppressPackageStartupMessages({
     library("purrr", quietly = TRUE, verbose = FALSE)
     library("tidyr", quietly = TRUE, verbose = FALSE)
     library("stringr", quietly = TRUE, verbose = FALSE)
-    library("regioneR", quietly = TRUE, verbose = FALSE)
     library("plyranges", quietly = TRUE, verbose = FALSE)
     library("Biostrings", quietly = TRUE, verbose = FALSE)
     library("Rsamtools", quietly = TRUE, verbose = FALSE)
@@ -87,18 +86,6 @@ chm13_censat_gr$name[
 
 # Finally, keep only the type as a metadata column
 chm13_censat_gr <- chm13_censat_gr[, "name"]
-
-# Load the chromosome sizes for the CHM13 genome
-chm13_chrom_sizes <- read_tsv(
-  fs::path(
-    data, "chm13", "chm13v2.0.chrom.sizes"
-  ),
-  show_col_types = FALSE,
-  col_names = c("chrom", "size")
-) |>
-  dplyr::mutate(start = 0, workspace = "ws") |>
-  dplyr::filter(chrom != "chrM") |>
-  dplyr::select(chrom, start, size, workspace)
 
 # Load the chromosome sizes for the CHM13 genome
 chm13_chrom_sizes <- read_tsv(
