@@ -221,8 +221,8 @@ new_gene_features_gr <- makeGRangesFromDataFrame(
 # Find which overlap with CTCF and convert to a dataframe
 hits <- findOverlaps(chm13_gr, new_gene_features_gr, ignore.strand = TRUE)
 overlap_df <- data.frame(
-  motif    = chm13_gr$motif_id[queryHits(hits)],
-  feature_type  = new_gene_features_gr$type[subjectHits(hits)]
+  motif = chm13_gr$name[queryHits(hits)],
+  feature_type = new_gene_features_gr$type[subjectHits(hits)]
 )
 
 # Create a summary of site counts for ploting
@@ -252,9 +252,9 @@ motif_grouped <- ggplot(
   aes(x = count, y = feature_type, fill = motif)
 ) +
   geom_col(position = "dodge", color = "black", linewidth = 0.25) +
-  labs(x = "CTCF Site Count", y = NULL, fill = "motif") +
-  scale_x_log10() +
-  theme_classic()+ 
+  labs(x = "CTCF site count", y = NULL, fill = "motif") +
+  scale_x_log10(expand = expansion(mult = c(0, 0))) +
+  theme_classic() +
   scale_y_discrete(limits = c(
     "3' UTR", "5' UTR", "Intron",
     "Exon", "Promoter"
@@ -266,8 +266,8 @@ motif_grouped <- ggplot(
     legend.position = "none",
     plot.background = NULL,
     axis.title.x = element_text(size = 8),
-    panel.grid.major.y = element_line(color = "gray70", linewidth = 0.3),
-    panel.grid.major.x = element_line(color = "gray70", linewidth = 0.3),
+    panel.grid.major.y = element_line(color = "gray90", linewidth = 0.3),
+    panel.grid.major.x = element_line(color = "gray90", linewidth = 0.3),
   )
 
 ggsave(

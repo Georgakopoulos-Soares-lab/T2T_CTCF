@@ -147,8 +147,7 @@ for (motif in motifs) {
   ))
 }
 
-# Load the results of the permutation test we performed on
-# the censat_density_perm_test.R script
+# Load the results of the permutation test we performed using GAT
 censat_gat_res <- read_tsv(
   fs::path(res_path, "misc", "gat", "GAT_results.tsv"),
   show_col_types = FALSE
@@ -162,7 +161,7 @@ censat_gat_res <- read_tsv(
   )) |>
   dplyr::select(motif, type, qvalue, sig)
 
-  # Define a color palette to be used throughout the plots
+# Define a color palette to be used throughout the plots
 motif_palette <- c(
   "MA0139.2" = "#A3ABC0",
   "MA1929.2" = "#424D6A",
@@ -213,8 +212,8 @@ density_bars <- ggplot(
   scale_x_continuous(expand = expansion(mult = c(0, 0.25))) +
   labs(x = "Motif density\n(sites per 1Mb)", y = NULL, fill = "Motif") +
   theme_classic() +
-  theme(panel.grid.major.y = element_line(color = "gray70", linewidth = 0.3),
-        panel.grid.major.x = element_line(color = "gray70", linewidth = 0.3),
+  theme(panel.grid.major.y = element_line(color = "gray90", linewidth = 0.3),
+        panel.grid.major.x = element_line(color = "gray90", linewidth = 0.3),
         plot.background = NULL,
         legend.position = "bottom",
         axis.text.y = element_text(size = 8),

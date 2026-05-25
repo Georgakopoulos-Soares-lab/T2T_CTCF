@@ -1,28 +1,31 @@
 # Load necessary libraries
 suppressPackageStartupMessages({
-    suppressWarnings({
-        library("purrr", quietly = TRUE, verbose = FALSE)
-        library("dplyr", quietly = TRUE, verbose = FALSE)
-        library("GenomicRanges", quietly = TRUE, verbose = FALSE)
-        library("readr", quietly = TRUE, verbose = FALSE)
-        library("fs", quietly = TRUE, verbose = FALSE)
-        library("yaml", quietly = TRUE, verbose = FALSE)
-        library("karyoploteR", quietly = TRUE, verbose = FALSE)
-        library("rtracklayer", quietly = TRUE, verbose = FALSE)
-        library("tidyr", quietly = TRUE, verbose = FALSE)
-        library("ggplot2", quietly = TRUE, verbose = FALSE)
-        library("ggsci", quietly = TRUE, verbose = FALSE)
-        library("patchwork", quietly = TRUE, verbose = FALSE)
-        library("stringr", quietly = TRUE, verbose = FALSE)
-    })
+  suppressWarnings({
+    library("purrr", quietly = TRUE, verbose = FALSE)
+    library("dplyr", quietly = TRUE, verbose = FALSE)
+    library("GenomicRanges", quietly = TRUE, verbose = FALSE)
+    library("readr", quietly = TRUE, verbose = FALSE)
+    library("fs", quietly = TRUE, verbose = FALSE)
+    library("yaml", quietly = TRUE, verbose = FALSE)
+    library("rtracklayer", quietly = TRUE, verbose = FALSE)
+    library("tidyr", quietly = TRUE, verbose = FALSE)
+    library("ggplot2", quietly = TRUE, verbose = FALSE)
+    library("patchwork", quietly = TRUE, verbose = FALSE)
+    library("stringr", quietly = TRUE, verbose = FALSE)
+  })
 })
 
-# Read the configuration YAML file that stores the paths of the directories used throughout the analysis
+# Read the configuration YAML file that stores
+# the paths of the directories used throughout the analysis
 config <- read_yaml("../config.yml")
 
-fimo_res <- fs::path(config$fimo_res) # Path containing FIMO results for CHM13, HG002, T2T primates, and human pangenome asseblies
-data <- fs::path(config$data) # Path containing metadata for CHM13, HG002, T2T primates, and human pangenome asseblies
-plots <- fs::path(config$plots) # Path to store any generated plots
+res_path <- fs::path(config$res) # Path containing all results
+# Path containing FIMO results for T2T primates
+fimo_res <- fs::path(res_path, "fimo_res")
+
+# Path containing metadata for T2T primates
+data <- fs::path(config$data)
+plots <- fs::path(res_path, "plots") # Path to store any generated plots
 
 load_fimo_results <- function(genome, fimo_res_dir) {
   # Load all FIMO results for the specified genome
@@ -33,12 +36,16 @@ load_fimo_results <- function(genome, fimo_res_dir) {
     comment = "#", # Remove comment lines at the end of each FIMO file
     show_col_types = FALSE
   ) |>
-    select(-c(motif_alt_id, score, `p-value`, `q-value`, matched_sequence)) # Remove unnecessary columns
+    select(
+      -c(motif_alt_id, score, `p-value`, `q-value`, matched_sequence)
+    ) # Remove unnecessary columns
   )
 
-  res <- dplyr::bind_rows(ctcf_dfs) # Create one complete dataframe with the results
+  # Create one complete dataframe with the results
+  res <- dplyr::bind_rows(ctcf_dfs)
 
-  # Convert the dataframe into a GRanges object for downstream interval manipulation
+  # Convert the dataframe into a GRanges object
+  # for downstream interval manipulation
   ctcf_gr <- GenomicRanges::makeGRangesFromDataFrame(
     res,
     seqnames.field = "sequence_name",
@@ -48,58 +55,62 @@ load_fimo_results <- function(genome, fimo_res_dir) {
     keep.extra.columns = TRUE
   )
 
-  # Also, create a GRangesList that holds each motif into a separate object
-  ctcf_grl <- split(ctcf_gr, ctcf_gr$motif_id)
-
-  list(gr = ctcf_gr, grl = ctcf_grl) # Store the two objects (GRanges and GRangesList) 
+  ctcf_gr
 }
 
-chm13 <- load_fimo_results("chm13", fimo_res)
+chm13_gr <- load_fimo_results("chm13", fimo_res)
 
 # Load CHM13 CenSat annotations
-chm13_censat_gr <- import(fs::path(data, "chm13", "chm13v2.0_censat_v2.1.bed"), format = "BED")
+chm13_censat_gr <- import(
+  fs::path(data, "chm13", "chm13v2.0_censat_v2.1.bed"),
+  format = "BED"
+)
 
-# Extract CenSat type from the names 
-chm13_censat_gr$type <- sub("_.*", "", chm13_censat_gr$name)
+# Extract CenSat type from the names
+chm13_censat_gr$type <- tolower(sub("_.*", "", chm13_censat_gr$name))
 
-# If an HOR has L at the end of the name then this indicates that this is the active alpha-satellite HOR
-chm13_censat_gr$type[chm13_censat_gr$type == "hor" & grepl("L\\)$", chm13_censat_gr$name)] <- "hor_l"
-
-# Drop unnecessary collumns
-mcols(chm13_censat_gr)[, c("score", "itemRgb", "thick")] <- NULL
+# Define active alpha satellites based on CenSat color
+chm13_censat_gr$type[
+  chm13_censat_gr$type == "hor" & chm13_censat_gr$itemRgb == "#990000"
+] <- "hor_l"
 
 # Add a column specifing the region's length
 chm13_censat_gr$length <- width(chm13_censat_gr)
 
 # Keep a list with the three CTCF motifs we analyze
-motifs <- names(chm13$grl)
+motifs <- unique(chm13_gr$motif_id)
 
 # Loop over the CTCF motifs and find how many overlap
 # with the CenSat annotations (ignoring strand orientation)
-for (motif in motifs) {
+for (motif in unique(chm13_gr$motif_id)) {
   mcols(chm13_censat_gr)[[motif]] <- countOverlaps(
     chm13_censat_gr,
-    chm13$grl[[motif]],
+    chm13_gr[chm13_gr$motif_id == motif],
     ignore.strand = TRUE
   )
 }
 
 # Convert the GRanges object to a dataframe
 censat_counts_df <- as.data.frame(mcols(chm13_censat_gr))
-gsat_counts_df <- censat_counts_df |> filter(type == "gsat") # Keep only gamma-satellites
-gsat_counts_df$family <- str_extract(gsat_counts_df$name, "(?<=\\().*?(?=\\))") # Extract gamma-satellite family
+
+gsat_counts_df <- censat_counts_df |>
+  dplyr::filter(type == "gsat") # Keep only gamma-satellites
+
+gsat_counts_df$family <- str_extract(
+  gsat_counts_df$name, "(?<=\\().*?(?=\\))"
+) # Extract gamma-satellite family
 
 # A mapping that normalizes the names of the different gamma-satellite types
 gsat_mapping <- c(
-  "GSATII" = "GSATII",
-  "GSATII/TAR" = "GSATII-TAR composite",
-  "GSATX;GSATII" = "GSATII-GSATX composite",
-  "GSAT" = "GSAT",
-  "GSATII,TAR" = "GSATII-TAR composite",
-  "TAR/GSATII" = "GSATII-TAR composite",
-  "GSATX" = "GSATX",
-  "GSATII,rnd-6_family-1431" = "GSATII",
-  "GSATII/TAR1" = "GSATII-TAR composite"
+  "GSATII" = "γSATII",
+  "GSATII/TAR" = "γSATII-TAR composite",
+  "GSATX;GSATII" = "γSATII-γSATX composite",
+  "GSAT" = "γSAT",
+  "GSATII,TAR" = "γSATII-TAR composite",
+  "TAR/GSATII" = "γSATII-TAR composite",
+  "GSATX" = "γSATX",
+  "GSATII,rnd-6_family-1431" = "γSATII",
+  "GSATII/TAR1" = "γSATII-TAR composite"
 )
 
 # Rename the gamma-satellite families for plotting
@@ -117,9 +128,10 @@ gsat_density <- gsat_counts_df |>
 
 # Read the chromosome sizes for the CHM13 genome
 chm13_chrom_sizes <- read_tsv(
-  fs::path(data, "chm13", "chm13v2.0.fa.chrom.sizes"),
+  fs::path(data, "chm13", "chm13v2.0.chrom.sizes"),
   show_col_types = FALSE,
-  col_names = c("chrom", "size"))
+  col_names = c("chrom", "size")
+)
 
 # Count genome length by summing the chromosome sizes (including MT)
 chm13_genome_size <- sum(chm13_chrom_sizes$size)
@@ -130,45 +142,95 @@ chm13_genome_densities <- data.frame(
   density_per_Mb = numeric()
 )
 
-# Loop over motifs and calculate the both the CenSat densities and the genome wide densities
+# Loop over motifs and calculate both
+# the CenSat densities and the genome wide densities
 for (motif in motifs) {
   gsat_density[[paste0(motif, "_per_Mb")]] <- gsat_density[[motif]] / (gsat_density$total_length / 1e6)
   chm13_genome_densities <- rbind(chm13_genome_densities, data.frame(
     motif = motif,
-    density_per_Mb = length(chm13$grl[[motif]]) / (chm13_genome_size / 1e6)
+    density_per_Mb = length(chm13_gr[chm13_gr$motif_id == motif]) / (chm13_genome_size / 1e6)
   ))
 }
 
 # Define a palette for plotting
-motif_palette <- c("MA0139.2" = "#A3ABC0", "MA1929.2" = "#424D6A", "MA1930.2" = "#0E1933")
+motif_palette <- c(
+  "MA0139.2" = "#A3ABC0",
+  "MA1929.2" = "#424D6A",
+  "MA1930.2" = "#0E1933"
+)
 per_mb_cols <- paste0(motifs, "_per_Mb") # Density columns
+
+# Load the results of the permutation test we performed using GAT
+gsat_gat_res <- read_tsv(
+  fs::path(res_path, "misc", "gat", "GAT_results_gsat.tsv"),
+  show_col_types = FALSE
+) |>
+  dplyr::rename(motif = track, family = annotation) |>
+  dplyr::mutate(sig = case_when(
+    qvalue < 0.001 & fold > 1 ~ "***",
+    qvalue < 0.01  & fold > 1 ~ "**",
+    qvalue < 0.05  & fold > 1 ~ "*",
+    .default = ""
+  )) |>
+  dplyr::select(motif, family, qvalue, sig)
+
+# A mapping that normalizes the names of the different gamma-satellite types
+gsat_gat_mapping <- c(
+  "GSATX" = "γSATX",
+  "GSAT" = "γSAT",
+  "GSATII" = "γSATII",
+  "GSATII-TAR composite" = "γSATII-TAR composite",
+  "GSATII-GSATX composite" = "γSATII-γSATX composite"
+)
+
+gsat_gat_res$family <- gsat_gat_mapping[gsat_gat_res$family]
 
 # Pivot the gamma-satellite density dataframe to be easier for plotting
 gsat_plot_df <- gsat_density |>
   pivot_longer(
     cols = all_of(per_mb_cols),
-    names_to = "motif", 
-    values_to = "density_per_Mb") |>
-  mutate(motif = gsub("_per_Mb", "", motif))
+    names_to = "motif",
+    values_to = "density_per_Mb"
+  ) |>
+  mutate(motif = gsub("_per_Mb", "", motif)
+  ) |>
+  dplyr::left_join(
+    gsat_gat_res, by = c("motif", "family")
+  )
 
 # Create a barplot showing the density per gamma-satellite family
-gsat_density_barplot <- ggplot(gsat_plot_df, aes(x = density_per_Mb, y = family, fill = motif)) +
+gsat_density_barplot <- ggplot(
+  gsat_plot_df,
+  aes(x = density_per_Mb, y = family, fill = motif)
+) +
   geom_vline(
-    data = chm13_genome_densities, 
-    aes(xintercept = density_per_Mb, color = motif), 
+    data = chm13_genome_densities,
+    aes(xintercept = density_per_Mb, color = motif),
     linetype = "dashed", linewidth = 0.4, alpha = 0.9
   ) +
-  geom_col(position = "dodge", color = "black", linewidth = 0.25) +
+  geom_col(
+    position = "dodge",
+    color = "black",
+    linewidth = 0.25
+  ) +
+  geom_text(
+    aes(label = sig, group = motif),
+    position = position_dodge(width = 0.9),
+    vjust = 0.8,
+    hjust = -0.2, # push slightly to the right of the bar
+    size = 3
+  ) +
   labs(x = "Motif density (sites per 1Mb)", y = NULL, fill = "Motif") +
   theme_classic() +
   scale_fill_manual(values = motif_palette) +
   scale_color_manual(values = motif_palette) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.12))) +
   scale_y_discrete(limits = c(
-    "GSAT", "GSATII", "GSATII-TAR composite", "GSATII-GSATX composite", "GSATX"
+    "γSAT", "γSATII", "γSATII-TAR composite", "γSATII-γSATX composite", "γSATX"
   )) +
   guides(fill = guide_legend(), color = "none") +
-  theme(panel.grid.major.y = element_line(color = "gray70", linewidth = 0.3),
-        panel.grid.major.x = element_line(color = "gray70", linewidth = 0.3),
+  theme(panel.grid.major.y = element_line(color = "gray90", linewidth = 0.3),
+        panel.grid.major.x = element_line(color = "gray90", linewidth = 0.3),
         plot.background = NULL,
         legend.position = "none",
         axis.text.y = element_text(size = 8),
@@ -180,28 +242,43 @@ gsat_gr <- chm13_censat_gr[chm13_censat_gr$type == 'gsat']
 
 # We find the exact CTCF sites that overlap with gamma-satellite regions
 # in a strand-agnostic manner
-hits <- findOverlaps(chm13$gr, gsat_gr, ignore.strand=TRUE)
-ctcf_gsat_overlaps <- chm13$gr[queryHits(hits)]
+hits <- findOverlaps(chm13_gr, gsat_gr, ignore.strand=TRUE)
+ctcf_gsat_overlaps <- chm13_gr[queryHits(hits)]
 
 # We add back the gamma-satellite information for each overlap
 mcols(ctcf_gsat_overlaps) <- cbind(mcols(ctcf_gsat_overlaps), mcols(gsat_gr[subjectHits(hits)]))
 
 # We create a pointer to the BigWigFile containing long-read methylation values
 # obtained with nanopolish for the CHM13 cell line
-methylation <- BigWigFile(fs::path(data, "chm13", "chm13v2.0_CHM13_CpG_ont_guppy3.6.0_nanopolish0.13.2.bw"))
+methylation <- BigWigFile(
+  fs::path(
+    data,
+    "chm13",
+    "chm13v2.0_CHM13_CpG_ont_guppy3.6.0_nanopolish0.13.2.bw"
+  )
+)
 
 # For each CTCF site that overlaps with gamma-satellite regions we get the mean methylation
 # of the interval and we add back this value to the original dataframe
 suppressWarnings({
-  mean_meth_scores <- summary(methylation, which = ctcf_gsat_overlaps, type = "mean")
-  ctcf_gsat_overlaps$mean_meth <- sapply(mean_meth_scores, function(x) x$score[1])
+  mean_meth_scores <- summary(
+    methylation,
+    which = ctcf_gsat_overlaps,
+    type = "mean"
+  )
+  ctcf_gsat_overlaps$mean_meth <- sapply(
+    mean_meth_scores,
+    function(x) x$score[1]
+  )
   ctcf_gsat_overlaps_df <- as.data.frame(ctcf_gsat_overlaps)
-  ctcf_gsat_overlaps_df$family <- str_extract(ctcf_gsat_overlaps_df$name, "(?<=\\().*?(?=\\))")
+  ctcf_gsat_overlaps_df$family <- str_extract(
+    ctcf_gsat_overlaps_df$name, "(?<=\\().*?(?=\\))"
+  )
   # Rename the gamma-satellite families for plotting
   ctcf_gsat_overlaps_df$family <- gsat_mapping[ctcf_gsat_overlaps_df$family]
 })
 
-# We create a boxplot showing the distribution of methylation scores across the 
+# We create a boxplot showing the distribution of methylation scores across the
 # CTCF sites that overlap with gamma-satellite regions
 ctcf_gsat_meth_boxplot <- ctcf_gsat_overlaps_df |>
   ggplot(aes(x = mean_meth, y = family, fill = motif_id)) +
@@ -228,14 +305,15 @@ ctcf_gsat_meth_boxplot <- ctcf_gsat_overlaps_df |>
   guides(fill = guide_legend(), color = "none") +
   # Order the y-axis ticks the same as the bar plot
   scale_y_discrete(limits = c(
-    "GSAT", "GSATII", "GSATII-TAR composite", "GSATII-GSATX composite", "GSATX"
+    "γSAT", "γSATII", "γSATII-TAR composite", "γSATII-γSATX composite", "γSATX"
   )) +
   theme_classic() +
-  theme(panel.grid.major.y = element_line(color = "gray70", linewidth = 0.3),
-        panel.grid.major.x = element_line(color = "gray70", linewidth = 0.3),
+  theme(panel.grid.major.y = element_line(color = "gray90", linewidth = 0.3),
+        panel.grid.major.x = element_line(color = "gray90", linewidth = 0.3),
         plot.background = NULL,
         legend.position = "none",
-        axis.text.y = element_blank(), # remove them for space since we are creating a combined plot
+        # remove them for space since we are creating a combined plot
+        axis.text.y = element_blank(),
         axis.text.x = element_text(size = 6),
         axis.title.x = element_text(size = 8))
 
@@ -253,8 +331,9 @@ combined_density_plots <- (gsat_density_barplot | ctcf_gsat_meth_boxplot) +
   )
 
 ggsave(
-  fs::path(plots, "gsat_plus_meth.pdf"),
+  fs::path(plots, "gsat_plus_meth.svg"),
   combined_density_plots,
   width = 5.8,
-  height = 2.5
+  height = 2.5,
+  bg = "transparent"
 )
