@@ -59,7 +59,7 @@ load_fimo_results <- function(genome, fimo_res_dir) {
   ctcf_gr
 }
 
-chm13 <- load_fimo_results("chm13", fimo_res)
+chm13_gr <- load_fimo_results("chm13", fimo_res)
 
 # A mapping that goes from abbreviations to full names (used for plotting)
 censat_mapping <- c(
@@ -86,11 +86,6 @@ chm13_censat_gr <- import(
 
 # Extract CenSat type from the names
 chm13_censat_gr$type <- tolower(sub("_.*", "", chm13_censat_gr$name))
-chm13_censat_gr$annotation <- tolower(stringr::str_extract(
-  chm13_censat_gr$name, "(?<=\\().*?(?=\\))"
-))
-
-chm13_censat_gr$annotation[is.na(chm13_censat_gr$annotation)] <- "No annotation"
 
 # Define active alpha satellites based on CenSat color
 chm13_censat_gr$type[
@@ -102,10 +97,10 @@ chm13_censat_gr$length <- width(chm13_censat_gr)
 
 # Loop over the CTCF motifs and find how many overlap
 # with the CenSat annotations (ignoring strand orientation)
-for (motif in unique(chm13$motif_id)) {
+for (motif in unique(chm13_gr$motif_id)) {
   mcols(chm13_censat_gr)[[motif]] <- countOverlaps(
     chm13_censat_gr,
-    chm13[chm13$motif_id == motif],
+    chm13_gr[chm13_gr$motif_id == motif],
     ignore.strand = TRUE
   )
 }
@@ -121,7 +116,7 @@ censat_density_df <- censat_counts_df |>
   summarise(
     n_regions = dplyr::n(),
     total_length = sum(length),
-    across(motifs, sum)
+    across(all_of(motifs), sum)
   )
 
 # Read the chromosome sizes for the CHM13 genome
@@ -148,34 +143,24 @@ for (motif in motifs) {
   censat_density_df[[paste0(motif, "_per_Mb")]] <- censat_density_df[[motif]] / (censat_density_df$total_length / 1e6)
   chm13_genome_densities <- rbind(chm13_genome_densities, data.frame(
     motif = motif,
-    density_per_Mb = length(chm13$grl[[motif]]) / (chm13_genome_size / 1e6)
+    density_per_Mb = length(chm13_gr[chm13_gr$motif_id == motif]) / (chm13_genome_size / 1e6)
   ))
 }
 
 # Load the results of the permutation test we performed on
 # the censat_density_perm_test.R script
-censat_perm_res <- read_csv(
-  fs::path(res_path, "misc", "chm13_permtest_results.csv"),
+censat_gat_res <- read_tsv(
+  fs::path(res_path, "misc", "gat", "GAT_results.tsv"),
   show_col_types = FALSE
-)
-
-censat_per_chrom_perm_res <- read_csv(
-  fs::path(res_path, "misc", "chm13_permtest_results_per_chrom.csv"),
-  show_col_types = FALSE
-)
-
-censat_per_chrom_perm_res$type <- censat_mapping[censat_per_chrom_perm_res$type]
-
-censat_per_chrom_perm_res <- censat_per_chrom_perm_res |>
-  dplyr::mutate(seqnames = sub("^chr", "", chrom))
-
-censat_per_chrom_perm_res <- censat_per_chrom_perm_res |>
-  mutate(sig = case_when(
-    pval < 0.001 ~ "***",
-    pval < 0.01 ~ "**",
-    pval < 0.05 ~ "*",
+) |>
+  dplyr::rename(motif = track, type = annotation) |>
+  dplyr::mutate(sig = case_when(
+    qvalue < 0.001 & fold > 1 ~ "***",
+    qvalue < 0.01  & fold > 1 ~ "**",
+    qvalue < 0.05  & fold > 1 ~ "*",
     .default = ""
-  ))
+  )) |>
+  dplyr::select(motif, type, qvalue, sig)
 
   # Define a color palette to be used throughout the plots
 motif_palette <- c(
@@ -198,19 +183,9 @@ censat_plot_df <- censat_density_df |>
 # use for plotting
 censat_plot_df <- inner_join(
   censat_plot_df,
-  censat_perm_res,
+  censat_gat_res,
   by = c("type", "motif")
 )
-
-# Add star annotations based on the BH adjusted p-value for
-# plotting
-censat_plot_df <- censat_plot_df |>
-  mutate(significance = case_when(
-    padj < 0.001 ~ "***",
-    padj < 0.01 ~ "**",
-    padj < 0.05 ~ "*",
-    TRUE ~ ""
-  ))
 
 # Rename the CenSat types for plotting
 censat_plot_df$type <- censat_mapping[censat_plot_df$type]
@@ -228,10 +203,10 @@ density_bars <- ggplot(
   geom_col(position = "dodge", color = "black", linewidth = 0.25) +
   # Add significance stars at the end of each bar
   geom_text(
-    aes(label = significance, group = motif),
+    aes(label = sig, group = motif),
     position = position_dodge(width = 0.9),
     vjust = 0.8,
-    hjust = -0.2,  # push slightly to the right of the bar
+    hjust = -0.2, # push slightly to the right of the bar
     size = 3
   ) +
   # Add some extra x-axis space so stars aren't clipped
@@ -255,7 +230,59 @@ density_bars <- ggplot(
   )) +
   guides(fill = guide_legend(), color = "none")
 
-# Convert the previous CenSAt GRanges object containing the number of
+per_chrom_perm_res_files <- fs::dir_ls(
+  fs::path(res_path, "misc", "gat", "per_chrom_results"),
+  glob = "*.tsv"
+)
+
+per_chrom_perm_res_dfs <- purrr::map(
+  per_chrom_perm_res_files,
+  ~ read_tsv(
+    .x,
+    show_col_types = FALSE
+  )
+)
+
+# Create one complete dataframe with the results
+censat_per_chrom_perm_res <- per_chrom_perm_res_dfs |>
+  dplyr::bind_rows(.id = "file") |>
+  dplyr::mutate(
+    seqnames = sub(
+      "^chr",
+      "",
+      stringr::str_extract(file, "chr[0-9XYM]+(?=\\.tsv$)")
+    ),
+    .keep = "unused"
+  ) |>
+  dplyr::rename(motif = track, type = annotation) |>
+  dplyr::mutate(sig = case_when(
+    qvalue < 0.001 & fold > 1 ~ "***",
+    qvalue < 0.01  & fold > 1 ~ "**",
+    qvalue < 0.05  & fold > 1 ~ "*",
+    .default = " "
+  )) |>
+  dplyr::select(seqnames, motif, type, qvalue, sig)
+
+censat_per_chrom_perm_res$type <- censat_mapping[censat_per_chrom_perm_res$type]
+
+censat_per_chrom_perm_res <- censat_per_chrom_perm_res |>
+  dplyr::mutate(
+    motif = factor(
+      motif, levels = c("MA1930.2", "MA1929.2", "MA0139.2")
+    )
+  ) |>
+  # Ensure every (seqnames, type) group has a row for each motif so the
+  # positional encoding in the collapsed `sig` string stays aligned.
+  tidyr::complete(
+    tidyr::nesting(seqnames, type),
+    motif,
+    fill = list(sig = " ")
+  ) |>
+  dplyr::arrange(seqnames, type, motif) |>
+  dplyr::group_by(seqnames, type) |>
+  dplyr::summarise(sig = paste(sig, collapse = "\n"), .groups = "drop")
+
+  # Convert the previous CenSAt GRanges object containing the number of
 # strand-agnostic motif overlaps into a dataframe
 chm13_censat_ctcf_overlap_counts <- as.data.frame(chm13_censat_gr)
 
@@ -270,6 +297,7 @@ chm13_censat_ctcf_overlaps_summary <- chm13_censat_ctcf_overlap_counts |>
     total_length = sum(length),
     .groups = "drop"
   )
+
 # Add density column, which shows the number of overlaps based on total
 # region length (summarized across all type instances in a chromosome)
 chm13_censat_ctcf_overlaps_summary$density <- chm13_censat_ctcf_overlaps_summary$total_motifs / (chm13_censat_ctcf_overlaps_summary$total_length / 1e6)
@@ -297,8 +325,6 @@ chm13_censat_ctcf_overlaps_summary_full$seqnames <- factor(
   levels = chr_order
 )
 
-
-
 # Heatmap plot showing combined density (all motif types) across each chromosome
 density_heatmap <- ggplot(
   chm13_censat_ctcf_overlaps_summary_full,
@@ -315,8 +341,9 @@ density_heatmap <- ggplot(
   geom_text(
     aes(label = sig),
     color = "white",
-    size = 2,
-    vjust = 0.75
+    size = 1.5,
+    lineheight = 0.5,
+    vjust = 0.6
   ) +
   theme_classic() +
   theme(
@@ -349,7 +376,8 @@ combined_density_plots <- (density_bars | density_heatmap) +
     legend.title = element_text(size = 6),
     legend.text = element_text(size = 6),
     legend.key.width = unit(0.45, "cm"),
-    legend.key.height = unit(0.2, "cm")
+    legend.key.height = unit(0.2, "cm"),
+    plot.background = NULL
   )
 
 ggsave(
