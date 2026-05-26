@@ -16,7 +16,7 @@ suppressPackageStartupMessages({
 })
 
 # Read the configuration YAML file that stores the paths of the directories used throughout the analysis
-config <- read_yaml("../config.yml")
+config <- read_yaml("../../config.yml")
 
 # Path containing FIMO results for CHM13, HG002, T2T primates, and human pangenome asseblies
 res <- fs::path(config$res)

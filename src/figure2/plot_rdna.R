@@ -9,7 +9,6 @@ suppressPackageStartupMessages({
     library("yaml", quietly = TRUE, verbose = FALSE)
     library("karyoploteR", quietly = TRUE, verbose = FALSE)
     library("rtracklayer", quietly = TRUE, verbose = FALSE)
-    library("paletteer", quietly = TRUE, verbose = FALSE)
     library("svglite", quietly = TRUE, verbose = FALSE)
     library("zeallot", quietly = TRUE, verbose = FALSE)
   })
@@ -191,10 +190,9 @@ add_track_axis <- function(
   kp
 }
 
-
 # Read the configuration YAML file that stores
 # the paths of the directories used throughout the analysis
-config <- read_yaml("../config.yml")
+config <- read_yaml("../../config.yml")
 
 res_path <- fs::path(config$res) # Path containing all results
 # Path containing FIMO results for T2T primates
@@ -277,8 +275,9 @@ tracks <- tibble::tribble(
 )
 
 # Create plot for zoom 1
-svglite::svglite(
-  fs::path(plots, "chr15_acro_zoom1.svg"),
+# svglite::svglite(
+pdf(
+  fs::path(plots, "chr15_acro_zoom1.pdf"),
   width = 4.3,
   height = 2
 )
@@ -421,16 +420,17 @@ suppressWarnings({
       filter(gene_name == "RNA45S3") |>
       pull(ID)
 
-    rna45s2_genes <- mcols(rdna_genes$genes)$gene_id %in% rna45s2_ids
+    rna45s3_genes <- mcols(rdna_genes$genes)$gene_id %in% rna45s3_ids
 
-    rdna_genes$genes <- rdna_genes$genes[rna45s2_genes]
-    rdna_genes$transcripts <- rdna_genes$transcripts[rna45s2_genes]
+    rdna_genes$genes <- rdna_genes$genes[rna45s3_genes]
+    rdna_genes$transcripts <- rdna_genes$transcripts[rna45s3_genes]
   })
 })
 
 # Create plot for zoom2
-svglite::svglite(
-  fs::path(plots, "chr15_acro_zoom2.svg"),
+# svglite::svglite(
+pdf(
+  fs::path(plots, "chr15_acro_zoom2.pdf"),
   width = 4.3,
   height = 2
 )
@@ -526,20 +526,40 @@ for (i in seq_len(nrow(tracks))) {
   c(kp, track_max) %<-% plot_bigwig(
     kp = kp,
     path = fs::path(data, "chm13", spec$file),
-    region = chr15_rdna_region, window.size = window,
-    r0 = spec$r0, r1 = spec$r1, color = spec$color
+    region = chr15_rdna_region,
+    window.size = zoom2_window,
+    r0 = spec$r0,
+    r1 = spec$r1,
+    color = spec$color
   )
 
   kp <- add_track_axis(
-    kp = kp, ymin = 0, ymax = track_max,
-    r0 = spec$r0, r1 = spec$r1,
+    kp = kp,
+    ymin = 0,
+    ymax = track_max,
+    r0 = spec$r0,
+    r1 = spec$r1,
     label = spec$label,
-    label_margin = 0.072, label_pos = NULL,
-    cex_axis = 0.45, cex_label = 0.5
+    label_margin = 0.072,
+    label_pos = NULL,
+    cex_axis = 0.45,
+    cex_label = 0.5
   )
 }
 
 dev.off()
+
+# Reload the rDNA TxDB
+suppressWarnings({
+  suppressMessages({
+    rdna_genes <- karyoploteR::makeGenesDataFromTxDb(
+      txdb = txdb,
+      karyoplot = kp,
+      plot.transcripts = TRUE,
+      plot.transcripts.structure = TRUE
+    )
+  })
+})
 
 # Finally, we plot the zoom 3 region which is a single rDNA gene
 pdf(
