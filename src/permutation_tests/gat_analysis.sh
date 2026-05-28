@@ -7,47 +7,61 @@ results_dir="$GAT_dir/per_chrom_results"
 mkdir -p "$log_dir" "$results_dir"
 
 # Genome-wide analysis
-gat-run.py \
-    --segment-file="$GAT_dir"/ctcf.bed \
-    --workspace-file="$GAT_dir"/workspace.bed \
-    --annotation-file="$GAT_dir"/censat.bed \
-    --isochore-bed-file="$GAT_dir"/isochores.bed \
-    --counter=segment-overlap \
-    --num-samples=10000 \
-    --num-threads=140 \
-    --random-seed=42 \
-    --log="$log_dir"/gat.log \
-    --with-segment-tracks \
-    --verbose=5 > "$GAT_dir"/GAT_results.tsv
+# gat-run.py \
+#     --segment-file="$GAT_dir"/ctcf.bed \
+#     --workspace-file="$GAT_dir"/workspace.bed \
+#     --annotation-file="$GAT_dir"/censat.bed \
+#     --isochore-bed-file="$GAT_dir"/isochores.bed \
+#     --counter=segment-overlap \
+#     --num-samples=10000 \
+#     --num-threads=140 \
+#     --random-seed=42 \
+#     --log="$log_dir"/gat.log \
+#     --with-segment-tracks \
+#     --verbose=5 > "$GAT_dir"/GAT_results.tsv
 
 # Analysis per chromosome
-chroms=$(cut -f1 "$GAT_dir/workspace.bed" | sort -u)
+# chroms=$(cut -f1 "$GAT_dir/workspace.bed" | sort -u)
 
-for chrom in $chroms; do
-    gat-run.py \
-        --segment-file=<(awk -v c="$chrom" '$1==c' "$GAT_dir/ctcf.bed") \
-        --workspace-file=<(awk -v c="$chrom" '$1==c' "$GAT_dir/workspace.bed") \
-        --annotation-file=<(awk -v c="$chrom" '$1==c' "$GAT_dir/censat.bed") \
-        --isochore-bed-file=<(awk -v c="$chrom" '$1==c' "$GAT_dir/isochores.bed") \
-        --counter=segment-overlap \
-        --num-samples=10000 \
-        --num-threads=140 \
-        --random-seed=42 \
-        --log="$log_dir/gat_${chrom}.log" \
-        --with-segment-tracks \
-        --verbose=5 > "$results_dir/GAT_results_${chrom}.tsv"
-done
+# for chrom in $chroms; do
+#     gat-run.py \
+#         --segment-file=<(awk -v c="$chrom" '$1==c' "$GAT_dir/ctcf.bed") \
+#         --workspace-file=<(awk -v c="$chrom" '$1==c' "$GAT_dir/workspace.bed") \
+#         --annotation-file=<(awk -v c="$chrom" '$1==c' "$GAT_dir/censat.bed") \
+#         --isochore-bed-file=<(awk -v c="$chrom" '$1==c' "$GAT_dir/isochores.bed") \
+#         --counter=segment-overlap \
+#         --num-samples=10000 \
+#         --num-threads=140 \
+#         --random-seed=42 \
+#         --log="$log_dir/gat_${chrom}.log" \
+#         --with-segment-tracks \
+#         --verbose=5 > "$results_dir/GAT_results_${chrom}.tsv"
+# done
 
 # Run analysis for gamma-satellites
+# gat-run.py \
+#     --segment-file="$GAT_dir"/ctcf.bed \
+#     --workspace-file="$GAT_dir"/workspace.bed \
+#     --annotation-file="$GAT_dir"/gsat.bed \
+#     --isochore-bed-file="$GAT_dir"/isochores.bed \
+#     --counter=segment-overlap \
+#     --num-samples=10000 \
+#     --num-threads=140 \
+#     --random-seed=42 \
+#     --log="$log_dir"/gat_gsat.log \
+#     --with-segment-tracks \
+#     --verbose=5 > "$GAT_dir"/GAT_results_gsat.tsv
+
+#
 gat-run.py \
-    --segment-file="$GAT_dir"/ctcf.bed \
-    --workspace-file="$GAT_dir"/workspace.bed \
-    --annotation-file="$GAT_dir"/gsat.bed \
-    --isochore-bed-file="$GAT_dir"/isochores.bed \
+    --segment-file="$GAT_dir"/phr_analysis/ctcf_sites.bed \
+    --workspace-file="$GAT_dir"/phr_analysis/workspace.bed \
+    --annotation-file="$GAT_dir"/phr_analysis/phrs.bed \
+    --isochore-bed-file="$GAT_dir"/phr_analysis/isochores.bed \
     --counter=segment-overlap \
     --num-samples=10000 \
-    --num-threads=140 \
+    --num-threads=6 \
     --random-seed=42 \
-    --log="$log_dir"/gat_gsat.log \
     --with-segment-tracks \
-    --verbose=5 > "$GAT_dir"/GAT_results_gsat.tsv
+    --log="$log_dir"/gat.log \
+    --verbose=5 > "$GAT_dir"/phr_analysis/GAT_results.tsv

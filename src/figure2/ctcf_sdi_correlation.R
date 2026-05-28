@@ -173,7 +173,7 @@ sdi_corr <- ggplot(
     method = "loess",
     span = 1,
     se = TRUE,
-    color = "grey25",
+    color = NA,
     fill = "grey75"
   ) +
   geom_point(
@@ -182,6 +182,14 @@ sdi_corr <- ggplot(
     shape = 21,
     color = "black",
     stroke = 0.4
+  ) +
+  # Fit a LOESS curve to the data to show the relationship
+  geom_smooth(
+    method = "loess",
+    span = 1,
+    se = TRUE,
+    color = "grey25",
+    fill = NA
   ) +
   annotate(
     "text",
@@ -209,8 +217,8 @@ sdi_corr <- ggplot(
   theme_classic(base_size = 8) +
   theme(
     panel.grid.major = element_line(color = "gray90", linewidth = 0.3),
-    axis.text   = element_text(size = 6),
-    axis.title  = element_text(size = 8),
+    axis.text = element_text(size = 6),
+    axis.title = element_text(size = 8),
     plot.background = element_rect(fill = "transparent", color = NA),
     legend.position = "none",
     # legend.position = "bottom",

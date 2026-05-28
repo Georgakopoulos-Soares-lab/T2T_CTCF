@@ -182,7 +182,7 @@ stats_per_site <- odgi_pos_res |>
     query_end
   ) |>
   dplyr::summarise(
-    n_targets = n(),
+    n_targets = dplyr::n(),
     is_ctcf = as.integer(any(is_ctcf == 1)),
     .groups = "drop"
   )
