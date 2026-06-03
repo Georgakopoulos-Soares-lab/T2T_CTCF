@@ -520,10 +520,10 @@ p_annotation <- plot_df |>
   dplyr::left_join(phr_gat_results, by = "group") |>
   dplyr::mutate(
     label = dplyr::case_when(
-      qvalue < 0.001 ~ "italic(p) < 0.001",
-      qvalue < 0.01 ~ "italic(p) < 0.01",
-      qvalue < 0.05 ~ "italic(p) < 0.05",
-      TRUE ~ sprintf("italic(p) == %.2f", qvalue)
+      qvalue < 0.001 ~ "italic(q) < 0.001",
+      qvalue < 0.01 ~ "italic(q) < 0.01",
+      qvalue < 0.05 ~ "italic(q) < 0.05",
+      TRUE ~ sprintf("italic(q) == %.2f", qvalue)
     )
   ) |>
   dplyr::mutate(

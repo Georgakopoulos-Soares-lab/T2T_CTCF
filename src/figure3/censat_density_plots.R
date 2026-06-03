@@ -14,23 +14,28 @@ suppressPackageStartupMessages({
   })
 })
 
-# Read the configuration YAML file that stores the
-# paths of the directories used throughout the analysis
-config <- read_yaml("../config.yml")
+# Read the configuration YAML file that stores
+# the paths of the directories used throughout the analysis
+config <- read_yaml("../../config.yml")
 
-# Path containing FIMO results for CHM13, HG002,
-# T2T primates, and human pangenome assemblies
-fimo_res <- fs::path(config$fimo_res)
+res_path <- fs::path(config$res) # Path containing all results
+# Path containing FIMO results for T2T primates
+fimo_res <- fs::path(res_path, "fimo_res")
 
-# Path containing metadata for CHM13, HG002,
-# T2T primates, and human pangenome assemblies
-data <- fs::path(config$data)
+# Path containing metadata for T2T primates
+data_path <- fs::path(config$data)
+plots <- fs::path(res_path, "plots") # Path to store any generated plots
 
-plots <- fs::path(config$plots) # Path to store any generated plots
+# Directory containing the GAT permutation results
+primates_gat_dir <- fs::path(res_path, "misc", "gat", "primates")
 
 # Load primate & human phylogenetic tree
 tree <- ape::read.tree(
-  fs::path(data, "multiple_sequence_alignments", "8-t2t-apes-2023v2.nh")
+  fs::path(
+    data_path,
+    "multiple_sequence_alignments",
+    "8-t2t-apes-2023v2.nh"
+  )
 )
 
 # Remove hg38 from the plotting
@@ -50,13 +55,14 @@ name_map <- c(
 # Rename the GenBank accessions
 tree$tip.label <- name_map[tree$tip.label]
 
+# Helper function to load FIMO results
 load_fimo_results <- function(genome_res) {
   # Load all FIMO results for the specified genome
   fimo_files <- fs::dir_ls(genome_res, glob = "*.tsv")
 
   ctcf_dfs <- purrr::map(fimo_files, ~ read_tsv(
     .x,
-    comment = "#", # Remove comment lines at the end of each FIMO file
+    comment = "# ", # Remove comment lines at the end of each FIMO file
     show_col_types = FALSE
   ) |>
     select(-c(
@@ -86,6 +92,8 @@ load_fimo_results <- function(genome_res) {
   fimo_gr
 }
 
+# Helper function that loads the assembly report for each primate species
+# to find which chromosomes are the canonical ones
 load_assembly_report <- function(
   assembly_report_path
 ) {
@@ -110,80 +118,61 @@ load_assembly_report <- function(
   assembly_report
 }
 
-# Create an empty named list to store the FIMO GRanges objects
-# across species
-fimo_grs <- list()
-
 # Loop over the different directories in the FIMO results path
 # We need only the CHM13 and primates folders
-for (directory in dir_ls(fimo_res, type = "directory")) {
-  if (path_file(directory) == "chm13") {
+target_dirs <- c(
+  fs::dir_ls(
+    fimo_res,
+    regexp = "chm13$",
+    type = "directory"
+  ),
+  fs::dir_ls(
+    fimo_res / "primates",
+    type = "directory"
+  )
+)
 
-    species <- path_file(directory)
-    fimo_grs[[species]] <- load_fimo_results(directory)
+# Load results, naming each element by its species folder
+fimo_grs <- target_dirs |>
+  purrr::set_names(~ tolower(fs::path_file(.x))) |>
+  purrr::map(load_fimo_results)
 
-  } else if (path_file(directory) == "primates") {
-    for (primate_dir in dir_ls(directory, type = "directory")) {
-      species <- path_file(primate_dir)
-
-      # Load the NCBI assembly report
-      assembly_report <- load_assembly_report(
-        fs::dir_ls(
-          fs::path(data, "primates", species),
-          glob = "*_pri_assembly_report.txt"
-        )
-      )
-      # Create a map to rename the NCBI accessions to chromosome names
-      refseq_to_chr <- setNames(
-        assembly_report$chromosome,
-        assembly_report$refseq_accn
-      )
-
-      fimo_gr <- load_fimo_results(primate_dir)
-
-      # Rename NCBI accessions
-      seqlevels(fimo_gr) <- refseq_to_chr[seqlevels(fimo_gr)]
-
-      fimo_grs[[species]] <- fimo_gr
-    }
-  }
-}
-
-# Function to load the CenSat files
-import_censat_bed <- function(path) {
-  censat <- rtracklayer::import(path, format = "BED")
-
-  # Drop unnecessary columns
-  GenomicRanges::mcols(censat)[, c("score", "itemRgb", "thick")] <- NULL
-
-  # Add region length, will be used for density calculation
-  censat$length <- IRanges::width(censat)
-
-  censat
-}
-
+# Helper function to load the CenSat data for CHM13
 load_chm13_censat <- function(chm13_censat_path) {
-  chm13_censat <- import_censat_bed(chm13_censat_path)
+
+  # Read the CenSat BED file into a GRanges object
+  chm13_censat_gr <- rtracklayer::import(chm13_censat_path, format = "BED")
 
   # Extract CenSat type
-  chm13_censat$type <- tolower(sub("_.*", "", chm13_censat$name))
+  chm13_censat_gr$name <- tolower(sub("_.*", "", chm13_censat_gr$name))
 
-  # Extract active alpha satellite arrays (end in capital L)
-  chm13_censat$type[
-    chm13_censat$type == "hor" & grepl("L\\)$", chm13_censat$name)
+  # Define active alpha satellites based on CenSat color
+  chm13_censat_gr$name[
+    chm13_censat_gr$name == "hor" & chm13_censat_gr$itemRgb == "#990000"
   ] <- "hor_l"
 
-  chm13_censat
+  # Remove the unnecessary metadata columns for the GAT analysis
+  chm13_censat_gr <- chm13_censat_gr |>
+    plyranges::select(name)
+
+  chm13_censat_gr$name <- censat_mapping[chm13_censat_gr$name]
+  chm13_censat_gr$length <- GenomicRanges::width(chm13_censat_gr)
+
+  chm13_censat_gr
 }
 
+# Helper function to load the CenSat data for primate species
 load_primate_censat <- function(
   assembly_report_path,
   censat_path,
   censat_mapping
 ) {
+
+  # Load the NCBI assembly report
   assembly_report <- load_assembly_report(assembly_report_path)
 
-  primate_censat <- import_censat_bed(censat_path)
+  # Read the CenSat BED file into a GRanges object
+  primate_censat <- rtracklayer::import(censat_path, format = "BED")
 
   # The primate CenSat files contain also data for unplaced contigs
   # We only keep the canonical chromosomes
@@ -193,15 +182,46 @@ load_primate_censat <- function(
   ]
 
   # Extract CenSat type
-  primate_censat$type <- tolower(sub("\\(.*", "", primate_censat$name))
+  primate_censat$name <- tolower(
+    sub("\\(.*", "",
+      sub("subTerm_mon.*", "subterm", primate_censat$name)
+    )
+  )
 
-  # Keep only CenSat types present in both primates and human assemblies
+  # Keep only regions of interest
   primate_censat <- primate_censat[
-    primate_censat$type %in% names(censat_mapping)
+    primate_censat$name %in% names(censat_mapping)
   ]
+
+  # Remove the unnecessary metadata columns for the GAT analysis
+  primate_censat <- primate_censat |>
+    plyranges::select(name)
+
+  primate_censat$name <- censat_mapping[primate_censat$name]
+  primate_censat$length <- GenomicRanges::width(primate_censat)
 
   primate_censat
 }
+
+# Define the directories that contain data for each primate species
+primate_dirs <- fs::dir_ls(data_path / "primates", type = "directory")
+
+# Remove the AQERs one, since this contains certain accelerated elements
+primate_dirs <- primate_dirs[path_file(primate_dirs) != "AQERs"]
+
+# Populate paths with the specific files needed for the analysis
+# We need the assembly reports and the CenSat annotations
+primate_paths <- tidyr::tibble(
+  species = tolower(fs::path_file(primate_dirs)),
+  report = purrr::map_chr(
+    primate_dirs,
+    \(d) dir_ls(d, glob = "*_pri_assembly_report.txt")
+  ),
+  censat = purrr::map_chr(
+    primate_dirs,
+    \(d) dir_ls(d, glob = "*_CenSat_v2.0.bed")
+  )
+)
 
 # A mapping that goes from abbreviations to full names (used for plotting)
 censat_mapping <- c(
@@ -218,42 +238,37 @@ censat_mapping <- c(
   "hor" = "αSat inactive HOR",
   "hor_l" = "αSat active HOR",
   "active_hor" = "αSat active HOR",
-  "rdna" = "rDNA array"
+  "rdna" = "rDNA array",
+  "subterm" = "Subterminal heterochromatin"
 )
 
-# Create a named list to store the CenSat GRanges objects
-censat_grs <- list()
-
-for (directory in dir_ls(data, type = "directory")) {
-  if (path_file(directory) == "chm13") {
-    censat <- dir_ls(directory, glob = "*_censat_v2.1.bed")
-    censat_gr <- load_chm13_censat(censat)
-
-    species <- path_file(directory)
-    censat_grs[[species]] <- censat_gr
-
-  } else if (path_file(directory) == "primates") {
-
-    for (primate_dir in dir_ls(directory, type = "directory")) {
-      report <- dir_ls(primate_dir, glob = "*_pri_assembly_report.txt")
-      censat <- dir_ls(primate_dir, glob = "*_CenSat_v2.0.bed")
-
-      censat_gr <- load_primate_censat(report, censat, censat_mapping)
-
-      species <- path_file(primate_dir)
-      censat_grs[[species]] <- censat_gr
-    }
-  }
-}
+# Create a list with the CenSat GRanges objects for CHM13 and the 6 primates
+censat_grs <- c(
+  list(
+    chm13 = load_chm13_censat(
+      fs::path(data_path, "chm13", "chm13v2.0_censat_v2.1.bed")
+    )
+  ),
+  with(
+    primate_paths,
+    set_names(
+      purrr::pmap(
+        list(report, censat, list(censat_mapping)),
+        load_primate_censat
+      ),
+      species
+    )
+  )
+)
 
 # Create a map to convert GenBank accession names to species names
 species_map <- c(
-  "PonAbe" = "Pongo abelii",
-  "PonPyg" = "Pongo pygmaeus",
-  "GorGor" = "Gorilla gorilla gorilla",
-  "PanPan" = "Pan paniscus",
-  "PanTro" = "Pan troglodytes",
-  "SymSyn" = "Symphalangus syndactylus",
+  "ponabe" = "Pongo abelii",
+  "ponpyg" = "Pongo pygmaeus",
+  "gorgor" = "Gorilla gorilla gorilla",
+  "panpan" = "Pan paniscus",
+  "pantro" = "Pan troglodytes",
+  "symsyn" = "Symphalangus syndactylus",
   "chm13" = "Homo sapiens"
 )
 
@@ -261,30 +276,37 @@ species_map <- c(
 density_list <- vector("list", length(names(fimo_grs)))
 names(density_list) <- names(fimo_grs)
 
-for (species in names(fimo_grs)) {
-  res_gr <- fimo_grs[[species]]
-  cen_gr <- censat_grs[[species]]
+# Here, we iterate over species extract the relevant FIMO data and
+# CenSat annotations, find how many CTCF sites overlap each annotation
+# calculate CTCF density and pivot the data to be accepted by ggtree
+suppressWarnings({
+  for (species in names(fimo_grs)) {
+    res_gr <- fimo_grs[[species]]
+    cen_gr <- censat_grs[[species]]
 
-  mcols(cen_gr)[["overlaps"]] <- countOverlaps(cen_gr, res_gr)
-  cen_df <- as.data.frame(mcols(cen_gr))
-  cen_df$type <- censat_mapping[cen_df$type]
+    mcols(cen_gr)[["overlaps"]] <- countOverlaps(cen_gr, res_gr)
+    cen_df <- as.data.frame(mcols(cen_gr))
 
-  density_list[[species]] <- cen_df |>
-    dplyr::group_by(type) |>
-    dplyr::summarise(
-      total_length = sum(length),
-      total_overlaps = sum(overlaps)
-    ) |>
-    dplyr::mutate(density = total_overlaps / (total_length / 1e6)) |>
-    dplyr::select(c(type, density)) |>
-    tidyr::pivot_wider(names_from = type, values_from = density) |>
-    tibble::add_column(species = species_map[[species]], .before = 1)
-}
+    density_list[[species]] <- cen_df |>
+      dplyr::group_by(name) |>
+      dplyr::summarise(
+        total_length = sum(length),
+        total_overlaps = sum(overlaps)
+      ) |>
+      dplyr::mutate(density = total_overlaps / (total_length / 1e6)) |>
+      dplyr::select(c(name, density)) |>
+      tidyr::pivot_wider(names_from = name, values_from = density) |>
+      tibble::add_column(species = species_map[[species]], .before = 1)
+  }
+})
 
+# Combine all species results into 1 dataframe
 density_df <- as.data.frame(dplyr::bind_rows(density_list))
+
+# Set densities of 0 to be NA so that the log-scale works when plotting
 density_df[density_df == 0] <- NA
 
-# Set species as rownames to be used by ggtree
+# # Set species as rownames to be used by ggtree
 rownames(density_df) <- density_df$species
 density_df <- density_df |> select(-species)
 
@@ -293,11 +315,58 @@ censat_order <- c(
   "αSat active HOR", "αSat inactive HOR", "αSat monomeric",
   "αSat divergent", "βSat", "γSat", "HSat1A", "HSat1B",
   "HSat2", "HSat3", "Centromeric transitions",
-  "Other satellites", "rDNA array"
+  "Other satellites", "rDNA array", "Subterminal heterochromatin"
 )
 
+# Rearrange the density dataframe to follow the CenSat order
 density_df <- density_df[, censat_order]
 
+# We load the results of GAT for each species, select only needed columns
+# and keep only enrichment associations. We also add star annotations based
+# on q-values
+gat_res <- purrr::map(names(species_map), \(sp) {
+  read_tsv(
+    fs::path(primates_gat_dir, sp, "GAT_results.tsv"),
+    show_col_types = FALSE
+  ) |>
+    dplyr::select(track, annotation, fold, qvalue) |>
+    dplyr::filter(fold > 1, qvalue < 0.05) |>
+    dplyr::mutate(
+      species = sp,
+      sig = case_when(
+        qvalue < 0.001 & fold > 1 ~ "***",
+        qvalue < 0.01 & fold > 1 ~ "**",
+        qvalue < 0.05 & fold > 1 ~ "*",
+        .default = " "
+      )
+    )
+}) |>
+  purrr::list_rbind()
+
+# We make sure that every species x CenSat annotation exists and
+# fill the missing ones with NA. Also, we format the q-value star
+# order so that it goes from MA1930.2 to MA1929.2 and MA0139.2
+gat_res <- gat_res |>
+  dplyr::mutate(
+    motif = factor(
+      track, levels = c("MA1930.2", "MA1929.2", "MA0139.2")
+    )
+  ) |>
+  tidyr::complete(
+    tidyr::nesting(species, annotation),
+    motif,
+    fill = list(sig = " ")
+  ) |>
+  dplyr::arrange(species, annotation, motif) |>
+  dplyr::group_by(species, annotation) |>
+  dplyr::summarise(sig = paste(sig, collapse = "\n"), .groups = "drop")
+
+# We add the full names for each CenSat annotation and for each species acronym
+gat_res$annotation <- censat_mapping[gat_res$annotation]
+gat_res$species <- species_map[gat_res$species]
+
+# We create a plot showing a phylogenetic tree with a heatmap
+# depicting CTCF density across CenSat types
 phylogenetic_tree_plot <- ggtree(
   tree,
   aes(x, y),
@@ -314,7 +383,7 @@ phylogenetic_tree_plot <- ggtree(
     fontsize = 2,
     linesize = 0.5
   )
-  
+
 suppressMessages({
   phylogenetic_tree_plot <- gheatmap(
     phylogenetic_tree_plot,
@@ -334,15 +403,52 @@ suppressMessages({
       breaks = c(1, 10, 100, 1000),
       labels = c("1", "10", "100", "1000")
     ) +
+    coord_cartesian(clip = "off")
+
+  # We extract the coordinates for each tile of the heatmap so that we can
+  # overlay the q-value stars on top
+  is_hm <- vapply(
+    phylogenetic_tree_plot$layers,
+    \(l) {
+      inherits(l$geom, "GeomTile") &&
+        all(c("variable", "value") %in% names(l$data))
+    },
+    logical(1)
+  )
+
+  cell_coords <- phylogenetic_tree_plot$layers[[which(is_hm)[1]]]$data |>
+    dplyr::distinct(
+      species = lab,
+      annotation = as.character(variable),
+      x, y
+    )
+
+  star_df <- dplyr::inner_join(
+    cell_coords, gat_res,
+    by = c("species", "annotation")
+  )
+
+  phylogenetic_tree_plot <- phylogenetic_tree_plot +
+    geom_text(
+      data = star_df,
+      aes(x = x, y = y - 0.09, label = sig),
+      inherit.aes = FALSE,
+      size       = 1.5,
+      lineheight = 0.75,
+      color      = "white"
+    ) +
     theme(
       legend.position = "none",
-      plot.margin = margin(t = 0, r = 0, b = 27, l = 0, unit = "pt")
-    ) +
-    coord_cartesian(clip = "off")
+      plot.background = NULL,
+      plot.margin = margin(t = 0, r = 0, b = 35, l = 0, unit = "pt")
+    )
 })
 
+# Save the plot
 ggsave(
   fs::path(plots, "density_across_primates.svg"),
   plot = phylogenetic_tree_plot,
   width = 5.5,
-  height = 2)
+  height = 2,
+  bg = "transparent"
+)

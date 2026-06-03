@@ -281,7 +281,7 @@ censat_per_chrom_perm_res <- censat_per_chrom_perm_res |>
   dplyr::group_by(seqnames, type) |>
   dplyr::summarise(sig = paste(sig, collapse = "\n"), .groups = "drop")
 
-  # Convert the previous CenSAt GRanges object containing the number of
+# Convert the previous CenSAt GRanges object containing the number of
 # strand-agnostic motif overlaps into a dataframe
 chm13_censat_ctcf_overlap_counts <- as.data.frame(chm13_censat_gr)
 

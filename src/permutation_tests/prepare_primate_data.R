@@ -180,7 +180,11 @@ load_primate_censat <- function(
   ]
 
   # Extract CenSat type
-  primate_censat$name <- tolower(sub("\\(.*", "", primate_censat$name))
+  primate_censat$name <- tolower(
+    sub("\\(.*", "",
+      sub("subTerm_mon*", "subterm", primate_censat$name)
+    )
+  )
 
   # Keep only regions of interest
   primate_censat <- primate_censat[
