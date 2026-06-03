@@ -13,7 +13,6 @@ suppressPackageStartupMessages({
     library("plyranges", quietly = TRUE, verbose = FALSE)
     library("Biostrings", quietly = TRUE, verbose = FALSE)
     library("Rsamtools", quietly = TRUE, verbose = FALSE)
-    library("ggplot2", quietly = TRUE, verbose = FALSE)
   })
 })
 
