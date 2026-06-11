@@ -569,7 +569,7 @@ pdf(
 )
 
 # Coordinates for a single rDNA gene and flanking region
-rdna_gene <- GRanges("chr15:2606973-2683083")
+rdna_gene <- GRanges("chr15:2649951-2723289")
 
 # Initialize plot
 kp <- init_karyoplot(

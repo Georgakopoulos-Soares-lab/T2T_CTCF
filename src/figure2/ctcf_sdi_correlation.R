@@ -14,12 +14,13 @@ suppressPackageStartupMessages({
     library("Biostrings", quietly = TRUE, verbose = FALSE)
     library("Rsamtools", quietly = TRUE, verbose = FALSE)
     library("plyranges", quietly = TRUE, verbose = FALSE)
+    library("MASS", quietly = TRUE, verbose = FALSE)
   })
 })
 
 # Read the configuration YAML file that stores
 # the paths of the directories used throughout the analysis
-config <- read_yaml("../../config.yml")
+config <- read_yaml("../config.yml")
 
 res_path <- fs::path(config$res) # Path containing all results
 # Path containing FIMO results for T2T primates
@@ -157,6 +158,16 @@ cor_label <- sprintf(
   p_label
 )
 
+# Primary model: NB GLM, CTCF counts ~ SDI + GC, with log-width offset.
+# Offset models site density (rate per bp) and weights regions by size
+# implicitly. GC included because CTCF motifs.
+ctcf_glm <- glm.nb(
+  ctcf_sites ~ sdi + gc_content + offset(log(width)),
+  data = chm13_phrs_df
+)
+
+print(summary(ctcf_glm))
+
 # Create a plot showing the relationship between SDI and CTCF density
 sdi_corr <- ggplot(
   chm13_phrs_df,
@@ -168,10 +179,10 @@ sdi_corr <- ggplot(
     linewidth = 0.5,
     color = "#383d50"
   ) +
-  # Fit a LOESS curve to the data to show the relationship
+  # Fit a linear model to the data
   geom_smooth(
-    method = "loess",
-    span = 1,
+    method = "lm",
+    formula = y ~ x,
     se = TRUE,
     color = NA,
     fill = "grey75"
@@ -183,10 +194,10 @@ sdi_corr <- ggplot(
     color = "black",
     stroke = 0.4
   ) +
-  # Fit a LOESS curve to the data to show the relationship
+  # Fit a linear model to the data
   geom_smooth(
-    method = "loess",
-    span = 1,
+    method = "lm",
+    formula = y ~ x,
     se = TRUE,
     color = "grey25",
     fill = NA

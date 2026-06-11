@@ -102,15 +102,15 @@ gsat_counts_df$family <- str_extract(
 
 # A mapping that normalizes the names of the different gamma-satellite types
 gsat_mapping <- c(
-  "GSATII" = "γSATII",
-  "GSATII/TAR" = "γSATII-TAR composite",
-  "GSATX;GSATII" = "γSATII-γSATX composite",
-  "GSAT" = "γSAT",
-  "GSATII,TAR" = "γSATII-TAR composite",
-  "TAR/GSATII" = "γSATII-TAR composite",
-  "GSATX" = "γSATX",
-  "GSATII,rnd-6_family-1431" = "γSATII",
-  "GSATII/TAR1" = "γSATII-TAR composite"
+  "GSATII" = "γSatII",
+  "GSATII/TAR" = "γSatII-TAR composite",
+  "GSATX;GSATII" = "γSatII-γSatX composite",
+  "GSAT" = "γSat",
+  "GSATII,TAR" = "γSatII-TAR composite",
+  "TAR/GSATII" = "γSatII-TAR composite",
+  "GSATX" = "γSatX",
+  "GSATII,rnd-6_family-1431" = "γSatII",
+  "GSATII/TAR1" = "γSatII-TAR composite"
 )
 
 # Rename the gamma-satellite families for plotting
@@ -176,11 +176,11 @@ gsat_gat_res <- read_tsv(
 
 # A mapping that normalizes the names of the different gamma-satellite types
 gsat_gat_mapping <- c(
-  "GSATX" = "γSATX",
-  "GSAT" = "γSAT",
-  "GSATII" = "γSATII",
-  "GSATII-TAR composite" = "γSATII-TAR composite",
-  "GSATII-GSATX composite" = "γSATII-γSATX composite"
+  "GSATX" = "γSatX",
+  "GSAT" = "γSat",
+  "GSATII" = "γSatII",
+  "GSATII-TAR composite" = "γSatII-TAR composite",
+  "GSATII-GSATX composite" = "γSatII-γSatX composite"
 )
 
 gsat_gat_res$family <- gsat_gat_mapping[gsat_gat_res$family]
@@ -226,7 +226,7 @@ gsat_density_barplot <- ggplot(
   scale_color_manual(values = motif_palette) +
   scale_x_continuous(expand = expansion(mult = c(0, 0.12))) +
   scale_y_discrete(limits = c(
-    "γSAT", "γSATII", "γSATII-TAR composite", "γSATII-γSATX composite", "γSATX"
+    "γSat", "γSatII", "γSatII-TAR composite", "γSatII-γSatX composite", "γSatX"
   )) +
   guides(fill = guide_legend(), color = "none") +
   theme(panel.grid.major.y = element_line(color = "gray90", linewidth = 0.3),
@@ -305,7 +305,7 @@ ctcf_gsat_meth_boxplot <- ctcf_gsat_overlaps_df |>
   guides(fill = guide_legend(), color = "none") +
   # Order the y-axis ticks the same as the bar plot
   scale_y_discrete(limits = c(
-    "γSAT", "γSATII", "γSATII-TAR composite", "γSATII-γSATX composite", "γSATX"
+    "γSat", "γSatII", "γSatII-TAR composite", "γSatII-γSatX composite", "γSatX"
   )) +
   theme_classic() +
   theme(panel.grid.major.y = element_line(color = "gray90", linewidth = 0.3),
