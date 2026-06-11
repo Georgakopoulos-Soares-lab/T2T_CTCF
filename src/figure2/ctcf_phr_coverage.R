@@ -263,8 +263,8 @@ subset_acro_sites <- function(stats_per_site, one_arm_only) {
     filtered,
     keep.extra.columns = TRUE,
     seqnames.field = "query_chrom",
-    start.field    = "query_start",
-    end.field      = "query_end"
+    start.field = "query_start",
+    end.field = "query_end"
   )
 }
 
@@ -287,7 +287,7 @@ acro_isochores$score <- NULL
 
 N_ITER <- 10000 # number of permutations
 SEED <- 42 # random seed so that results are reprodusible
-WORKERS <- 60 # number of cores to use
+WORKERS <- 70 # number of cores to use
 BPP <- MulticoreParam(workers = WORKERS)
 
 # Create a list with the arguments that are used to create the coverage matrix

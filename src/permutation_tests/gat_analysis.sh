@@ -66,9 +66,9 @@ mkdir -p "$log_dir" "$per_chrom_results_dir" "$primate_results_dir"
 #     --with-segment-tracks \
 #     --log="$log_dir"/gat.log \
 #     --verbose=5 > "$GAT_dir"/phr_analysis/GAT_results.tsv
-
+# chm13 gorgor panpan pantro ponabe ponpyg 
 # Run analysis for primate species
-for species in chm13 gorgor panpan pantro ponabe ponpyg symsyn; do
+for species in symsyn; do
     
     echo "Running GAT for $species..."
     
@@ -78,8 +78,8 @@ for species in chm13 gorgor panpan pantro ponabe ponpyg symsyn; do
         --annotation-file="$primate_results_dir"/"$species"/censat.bed \
         --isochore-bed-file="$primate_results_dir"/"$species"/isochores.bed \
         --counter=segment-overlap \
-        --num-samples=10 \
-        --num-threads=5 \
+        --num-samples=10000 \
+        --num-threads=80 \
         --random-seed=42 \
         --log="$log_dir"/"$species"_gat.log \
         --with-segment-tracks \
