@@ -64,3 +64,5 @@ pigz -d chm13v2.0_RefSeq_Liftoff_v5.2.gff3.gz # Decompress GFF3 file
 bgzip -@ 8 chm13v2.0.fa
 samtools faidx chm13v2.0.fa.gz
 cut -f1,2 chm13v2.0.fa.gz.fai > chm13v2.0.chrom.sizes
+
+tail -n +2 chm13v2.0_SD.full.bed > tmp && mv tmp chm13v2.0_SD.full.bed

@@ -53,6 +53,19 @@ mkdir -p "$log_dir" "$per_chrom_results_dir" "$primate_results_dir"
 #     --with-segment-tracks \
 #     --verbose=5 > "$GAT_dir"/GAT_results_gsat.tsv
 
+# Genome-wide analysis
+gat-run.py \
+    --segment-file="$GAT_dir"/ctcf.bed \
+    --workspace-file="$GAT_dir"/workspace.bed \
+    --annotation-file="$GAT_dir"/teucer.bed \
+    --isochore-bed-file="$GAT_dir"/isochores.bed \
+    --counter=segment-overlap \
+    --num-samples=100 \
+    --num-threads=4 \
+    --random-seed=42 \
+    --log="$log_dir"/gat.log \
+    --verbose=5 > "$GAT_dir"/teucer_GAT_results.tsv
+
 # # Run analysis for pseudo-homologous regions
 # gat-run.py \
 #     --segment-file="$GAT_dir"/phr_analysis/ctcf_sites.bed \
@@ -66,22 +79,22 @@ mkdir -p "$log_dir" "$per_chrom_results_dir" "$primate_results_dir"
 #     --with-segment-tracks \
 #     --log="$log_dir"/gat.log \
 #     --verbose=5 > "$GAT_dir"/phr_analysis/GAT_results.tsv
-# chm13 gorgor panpan pantro ponabe ponpyg 
-# Run analysis for primate species
-for species in symsyn; do
+
+# # Run analysis for primate species
+# for species in chm13 gorgor panpan pantro ponabe ponpyg symsyn; do
     
-    echo "Running GAT for $species..."
+#     echo "Running GAT for $species..."
     
-    gat-run.py \
-        --segment-file="$primate_results_dir"/"$species"/ctcf_sites.bed \
-        --workspace-file="$primate_results_dir"/"$species"/workspace.bed \
-        --annotation-file="$primate_results_dir"/"$species"/censat.bed \
-        --isochore-bed-file="$primate_results_dir"/"$species"/isochores.bed \
-        --counter=segment-overlap \
-        --num-samples=10000 \
-        --num-threads=80 \
-        --random-seed=42 \
-        --log="$log_dir"/"$species"_gat.log \
-        --with-segment-tracks \
-        --verbose=5 > "$primate_results_dir"/"$species"/GAT_results.tsv
-done
+#     gat-run.py \
+#         --segment-file="$primate_results_dir"/"$species"/ctcf_sites.bed \
+#         --workspace-file="$primate_results_dir"/"$species"/workspace.bed \
+#         --annotation-file="$primate_results_dir"/"$species"/censat.bed \
+#         --isochore-bed-file="$primate_results_dir"/"$species"/isochores.bed \
+#         --counter=segment-overlap \
+#         --num-samples=10000 \
+#         --num-threads=80 \
+#         --random-seed=42 \
+#         --log="$log_dir"/"$species"_gat.log \
+#         --with-segment-tracks \
+#         --verbose=5 > "$primate_results_dir"/"$species"/GAT_results.tsv
+# done

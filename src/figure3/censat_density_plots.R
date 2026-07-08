@@ -206,8 +206,10 @@ load_primate_censat <- function(
 # Define the directories that contain data for each primate species
 primate_dirs <- fs::dir_ls(data_path / "primates", type = "directory")
 
-# Remove the AQERs one, since this contains certain accelerated elements
-primate_dirs <- primate_dirs[path_file(primate_dirs) != "AQERs"]
+# Remove the AQERs and SDRs directories
+primate_dirs <- primate_dirs[
+  !path_file(primate_dirs) %in% c("AQERs", "SDRs")
+]
 
 # Populate paths with the specific files needed for the analysis
 # We need the assembly reports and the CenSat annotations

@@ -7,7 +7,6 @@ suppressPackageStartupMessages({
     library("readr", quietly = TRUE, verbose = FALSE)
     library("fs", quietly = TRUE, verbose = FALSE)
     library("yaml", quietly = TRUE, verbose = FALSE)
-    library("karyoploteR", quietly = TRUE, verbose = FALSE)
     library("rtracklayer", quietly = TRUE, verbose = FALSE)
     library("tidyr", quietly = TRUE, verbose = FALSE)
     library("ggplot2", quietly = TRUE, verbose = FALSE)

@@ -333,7 +333,7 @@ combined_density_plots <- (gsat_density_barplot | ctcf_gsat_meth_boxplot) +
 ggsave(
   fs::path(plots, "gsat_plus_meth.svg"),
   combined_density_plots,
-  width = 5.8,
-  height = 2.5,
+  width = 5.4,
+  height = 2.25,
   bg = "transparent"
 )
