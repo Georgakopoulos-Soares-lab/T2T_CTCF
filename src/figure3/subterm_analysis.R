@@ -68,9 +68,9 @@ load_fimo_results <- function(genome_res) {
   fimo_gr
 }
 
-N_ITER <- 10000 # number of permutations
+N_ITER <- 1000 # number of permutations
 SEED <- 42 # random seed so that results are reprodusible
-WORKERS <- 70 # number of cores to use
+WORKERS <- 40 # number of cores to use
 BPP <- MulticoreParam(workers = WORKERS)
 
 # Helper function that creates two EnrichedHeatmap coverage
@@ -83,6 +83,14 @@ plot_subterm_profile <- function(
   show_x_labels = TRUE,
   show_y_labels = TRUE
 ) {
+
+  message(
+      sprintf(
+        "Processing %s",
+        species_dir
+      )
+    )
+  
   # Load CTCF sites
   gr <- load_fimo_results(
     fs::path(fimo_res, "primates", species_dir)
@@ -143,7 +151,7 @@ plot_subterm_profile <- function(
     # Update the CTCF GRanges object
     gr <- gr[!is.na(gr$name)]
   }
-
+  
   # Create a matrix showing CTCF occupancy in 100bp windows across
   # subterminal heterochromatin regions and 30Kb flanks
   fimo_mat <- EnrichedHeatmap::normalizeToMatrix(
@@ -169,118 +177,65 @@ plot_subterm_profile <- function(
     background = 0
   )
 
-  # Helper function that generates a GRangesList
-  # of GC matched shuffled CTCF sites
-  shuffle_within_isochores <- function(
-    regions,
-    isochores,
-    n_iter,
-    seed,
-    BPPARAM = BiocParallel::bpparam()
-  ) {
+  # Common arguments used for the subterm metaprofile plot
+  null_mat_args <- list(
+    target = subterm_gr,
+    extend = 30000,
+    mean_mode = "absolute",
+    w = 100,
+    background = 0,
+    smooth = FALSE,
+    verbose = FALSE
+  )
 
-    # Extract the availabe isochore labels
-    isochore_labels <- unique(
-      GenomicRanges::mcols(regions)$name
-    )
+  # Extract the availabe isochore labels
+  isochore_labels <- unique(GenomicRanges::mcols(gr)$name)
 
-    # Set a seed that will be reproducible across cores
-    BiocParallel::bpRNGseed(BPPARAM) <- seed
+  # Set a seed that will be reproducible across cores
+  BiocParallel::bpRNGseed(BPP) <- SEED
 
-    # Generate shuffled sets in parallel
-    shuffles <- BiocParallel::bplapply(
-      seq_len(n_iter), # go over iterations
-      function(i) {
-        # For each isochore label
-        per_label <- lapply(isochore_labels, function(label) {
-          # extract CTCF sites that match the label
-          ctcf_subset <- regions[
-            GenomicRanges::mcols(regions)$name == label
-          ]
+  # Generate a rows which will populate the null matrix
+  # Each row depicts the mean signal across subterminal regions + flanks for 1 iteration
+  null_rows <- BiocParallel::bplapply(
+    seq_len(N_ITER),
+    function(i) {
+      # For each isochore label, shuffle the matching CTCF sites
+      # within the matching isochores (GC-matched null).
+      per_label <- lapply(isochore_labels, function(label) {
+        ctcf_subset <- gr[
+          GenomicRanges::mcols(gr)$name == label
+        ]
+        isochore_subset <- isochores[
+          GenomicRanges::mcols(isochores)$name == label
+        ]
+        
+        # We allow overlapping regions and impose no chromosome
+        # constraint on placement.
+        regioneR::randomizeRegions(
+          ctcf_subset,
+          genome = isochore_subset,
+          mask = NA,
+          allow.overlaps = TRUE,
+          per.chromosome = FALSE
+        )
+      })
 
-          # extract isochores that match the label
-          isochore_subset <- isochores[
-            GenomicRanges::mcols(isochores)$name == label
-          ]
-
-          # use regioneR to generate null sets matching isochores
-          # We allow overlapping regions and the permutation is
-          # performed with no chromosome constriction
-          regioneR::randomizeRegions(
-            ctcf_subset,
-            genome = isochore_subset,
-            mask = NA,
-            allow.overlaps = TRUE,
-            per.chromosome = FALSE
-          )
-        })
-
-        # Create the shuffled set
-        shuffled_gr <- do.call(c, per_label)
-
-        # Add the iteration number to keep track
-        GenomicRanges::mcols(shuffled_gr)$iter <- i
-
-        # Return the objevt
-        shuffled_gr
-      },
-      BPPARAM = BPPARAM
-    )
-
-    # Create the GRanges list
-    GenomicRanges::GRangesList(shuffles)
-  }
-
-  # Create the null distribution set
-  null_set <- shuffle_within_isochores(
-    gr,
-    isochores,
-    n_iter = N_ITER,
-    seed = SEED,
+      # Assemble the full shuffled set for this iteration and
+      # collapse it to a per-bin mean vector right away
+      shuffled_gr <- do.call(c, per_label)
+ 
+      m <- do.call(
+        EnrichedHeatmap::normalizeToMatrix,
+        c(list(signal = shuffled_gr), null_mat_args)
+      )
+      colMeans(m)
+    },
     BPPARAM = BPP
   )
-
-  # Helper function that runs EnrichedHeatmap's normalizeToMatrix
-  # for a null region set and returns the mean value per column (bin)
-  col_means_for_signal <- function(signal_gr, args) {
-
-    # Call function
-    m <- do.call(
-      EnrichedHeatmap::normalizeToMatrix,
-      c(list(signal = signal_gr), args)
-    )
-
-    # Get a per-bin mean signal across all target regions
-    colMeans(m)
-  }
-
-  # Helper function that runs the matrix generation in parallel
-  null_matrix <- function(null_set, BPPARAM) {
-    rows <- BiocParallel::bplapply(
-      seq_along(null_set),
-      function(i) col_means_for_signal(
-        null_set[[i]],                 # shuffled CTCF sites = the signal
-        list(
-          # no `signal` here; col_means_for_signal supplies it
-          target     = subterm_gr,
-          extend     = 30000,
-          mean_mode  = "absolute",
-          w          = 100,
-          background = 0,
-          smooth     = FALSE,
-          verbose    = FALSE
-        )
-      ),
-      BPPARAM = BPPARAM
-    )
-    do.call(rbind, rows)
-  }
-
-  # Create the associated matrices for the null sets
-  null_mat <- null_matrix(
-    null_set,
-    BPP
-  )
+ 
+  # N_ITER x n_bins matrix of null per-bin means
+  null_mat <- do.call(rbind, null_rows)
+  rm(null_rows)
 
   # Convert both matrices into dataframes
   fimo_cov <- data.frame(
@@ -290,6 +245,9 @@ plot_subterm_profile <- function(
     null_q025 = matrixStats::colQuantiles(null_mat, probs = 0.025),
     null_q975 = matrixStats::colQuantiles(null_mat, probs = 0.975)
   )
+
+  rm(null_mat)
+  invisible(gc(verbose = FALSE))
 
   meth_cov <- data.frame(
     pos = seq_len(ncol(meth_mat)),
@@ -319,7 +277,8 @@ plot_subterm_profile <- function(
     ggplot2::geom_line(
       ggplot2::aes(y = null_mean),
       colour = "grey50",
-      linewidth = 0.3
+      linewidth = 0.3,
+      linetype = "dashed"
     ) +
     ggplot2::geom_line(
       data = subset(fimo_cov, pos <= target_start),
@@ -360,7 +319,8 @@ plot_subterm_profile <- function(
         color = "gray70",
         linewidth = 0.1
       ),
-      plot.title = ggplot2::element_text(face = "italic", size = 8)
+      plot.title = ggplot2::element_text(face = "italic", size = 8),
+      plot.background = NULL
     )
 
   # Line plot showing methylation in the windows
@@ -430,7 +390,8 @@ plot_subterm_profile <- function(
         ggplot2::element_text(size = 8)
       } else {
         ggplot2::element_blank()
-      }
+      },
+      plot.background = NULL
     )
 
   # Combine the 2 plots into one
@@ -438,11 +399,11 @@ plot_subterm_profile <- function(
     patchwork::plot_layout(heights = c(2, 1))
 
   list(
-    plot = combined,
-    plots = list(coverage = fimo_plot, methylation = meth_plot),
-    data = list(coverage = fimo_cov, methylation = meth_cov),
-    matrices = list(fimo = fimo_mat, meth = meth_mat),
-    subterm_gr = subterm_gr
+    plot = combined
+    # plots = list(coverage = fimo_plot, methylation = meth_plot),
+    # data = list(coverage = fimo_cov, methylation = meth_cov),
+    # matrices = list(fimo = fimo_mat, meth = meth_mat),
+    # subterm_gr = subterm_gr
   )
 }
 
@@ -500,6 +461,6 @@ ggsave(
   fs::path(plots, "subterm_profiles.pdf"),
   combined_profiles,
   width = 5.5,
-  height = 3.5,
+  height = 3.1,
   bg = "transparent"
 )

@@ -1,5 +1,4 @@
 #!/bin/bash
-
 hal_liftover() {
   local input_bed="$1"
   local output_bed="$2"

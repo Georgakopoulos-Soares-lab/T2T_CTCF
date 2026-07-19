@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+# set -euo pipefail
 
 # T2T primate downloads
 mkdir -p ../../data/primates
@@ -19,18 +19,18 @@ primate_urls=(
     "https://genomeark.s3.amazonaws.com/species/Symphalangus_syndactylus/mSymSyn1/assembly_curated/repeats/mSymSyn1_v2.0.SD_v1.0.bb" # Maybe switch chr12 and chr19??
 
     # Pongo pygmaeus data
-    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/885/625/GCF_028885625.2_NHGRI_mPonPyg2-v2.0_pri/GCF_028885625.2_NHGRI_mPonPyg2-v2.0_pri_genomic.fna.gz"
-    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/885/625/GCF_028885625.2_NHGRI_mPonPyg2-v2.0_pri/GCF_028885625.2_NHGRI_mPonPyg2-v2.0_pri_genomic.gff.gz"
-    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/885/625/GCF_028885625.2_NHGRI_mPonPyg2-v2.0_pri/GCF_028885625.2_NHGRI_mPonPyg2-v2.0_pri_assembly_report.txt"
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/885/625/GCF_028885625.2_NHGRI_mPonPyg2-v2.1_pri/GCF_028885625.2_NHGRI_mPonPyg2-v2.1_pri_genomic.fna.gz"
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/885/625/GCF_028885625.2_NHGRI_mPonPyg2-v2.1_pri/GCF_028885625.2_NHGRI_mPonPyg2-v2.1_pri_genomic.gff.gz"
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/885/625/GCF_028885625.2_NHGRI_mPonPyg2-v2.1_pri/GCF_028885625.2_NHGRI_mPonPyg2-v2.1_pri_assembly_report.txt"
     "https://genomeark.s3.amazonaws.com/species/Pongo_pygmaeus/mPonPyg2/assembly_curated/repeats/mPonPyg2_v2.0_CenSat_v2.0.bb"
     "https://genomeark.s3.amazonaws.com/species/Pongo_pygmaeus/mPonPyg2/assembly_curated/repeats/mPonPyg2_v2.0_pri.RepeatMasker_v1.1.bb"
     "https://genomeark.s3.amazonaws.com/species/Pongo_pygmaeus/mPonPyg2/assembly_curated/epi/mPonPyg2_v2.0.ONT_Guppy6.3.8_5mC.winnowmap_modkit_5mC_CpG_v1.0.bw"
     "https://genomeark.s3.amazonaws.com/species/Pongo_pygmaeus/mPonPyg2/assembly_curated/repeats/mPonPyg2_v2.0.SD_v1.0.bb"
 
     # Pongo abelii data
-    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/885/655/GCF_028885655.2_NHGRI_mPonAbe1-v2.0_pri/GCF_028885655.2_NHGRI_mPonAbe1-v2.0_pri_genomic.fna.gz"
-    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/885/655/GCF_028885655.2_NHGRI_mPonAbe1-v2.0_pri/GCF_028885655.2_NHGRI_mPonAbe1-v2.0_pri_genomic.gff.gz"
-    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/885/655/GCF_028885655.2_NHGRI_mPonAbe1-v2.0_pri/GCF_028885655.2_NHGRI_mPonAbe1-v2.0_pri_assembly_report.txt"
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/885/655/GCF_028885655.2_NHGRI_mPonAbe1-v2.1_pri/GCF_028885655.2_NHGRI_mPonAbe1-v2.1_pri_genomic.fna.gz"
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/885/655/GCF_028885655.2_NHGRI_mPonAbe1-v2.1_pri/GCF_028885655.2_NHGRI_mPonAbe1-v2.1_pri_genomic.gff.gz"
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/885/655/GCF_028885655.2_NHGRI_mPonAbe1-v2.1_pri/GCF_028885655.2_NHGRI_mPonAbe1-v2.1_pri_assembly_report.txt"
     "https://genomeark.s3.amazonaws.com/species/Pongo_abelii/mPonAbe1/assembly_curated/repeats/mPonAbe1_v2.0_CenSat_v2.0.bb"
     "https://genomeark.s3.amazonaws.com/species/Pongo_abelii/mPonAbe1/assembly_curated/repeats/mPonAbe1_v2.0_pri.RepeatMasker_v1.1.bb"
     "https://genomeark.s3.amazonaws.com/species/Pongo_abelii/mPonAbe1/assembly_curated/epi/mPonAbe1_v2.0.ONT_Guppy6.3.8_5mC.winnowmap_modkit_5mC_CpG_v1.0.bw"
@@ -46,18 +46,18 @@ primate_urls=(
     "https://genomeark.s3.amazonaws.com/species/Gorilla_gorilla/mGorGor1/assembly_curated/repeats/mGorGor1_v2.0.SD_v1.0.bb"
 
     # Pan paniscus data
-    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/029/289/425/GCF_029289425.2_NHGRI_mPanPan1-v2.0_pri/GCF_029289425.2_NHGRI_mPanPan1-v2.0_pri_genomic.fna.gz"
-    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/029/289/425/GCF_029289425.2_NHGRI_mPanPan1-v2.0_pri/GCF_029289425.2_NHGRI_mPanPan1-v2.0_pri_genomic.gff.gz"
-    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/029/289/425/GCF_029289425.2_NHGRI_mPanPan1-v2.0_pri/GCF_029289425.2_NHGRI_mPanPan1-v2.0_pri_assembly_report.txt"
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/029/289/425/GCF_029289425.2_NHGRI_mPanPan1-v2.1_pri/GCF_029289425.2_NHGRI_mPanPan1-v2.1_pri_genomic.fna.gz"
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/029/289/425/GCF_029289425.2_NHGRI_mPanPan1-v2.1_pri/GCF_029289425.2_NHGRI_mPanPan1-v2.1_pri_genomic.gff.gz"
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/029/289/425/GCF_029289425.2_NHGRI_mPanPan1-v2.1_pri/GCF_029289425.2_NHGRI_mPanPan1-v2.1_pri_assembly_report.txt"
     "https://genomeark.s3.amazonaws.com/species/Pan_paniscus/mPanPan1/assembly_curated/repeats/mPanPan1_v2.0_CenSat_v2.0.bb"
     "https://genomeark.s3.amazonaws.com/species/Pan_paniscus/mPanPan1/assembly_curated/repeats/mPanPan1_v2.0_pri.RepeatMasker_v1.1.bb"
     "https://genomeark.s3.amazonaws.com/species/Pan_paniscus/mPanPan1/assembly_curated/epi/mPanPan1_v2.0.ONT_Guppy6.3.8_5mC.winnowmap_modkit_5mC_CpG_v1.0.bw"
     "https://genomeark.s3.amazonaws.com/species/Pan_paniscus/mPanPan1/assembly_curated/repeats/mPanPan1_v2.0.SD_v1.0.bb"
 
     # Pan troglodytes data
-    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/858/775/GCF_028858775.2_NHGRI_mPanTro3-v2.0_pri/GCF_028858775.2_NHGRI_mPanTro3-v2.0_pri_genomic.fna.gz"
-    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/858/775/GCF_028858775.2_NHGRI_mPanTro3-v2.0_pri/GCF_028858775.2_NHGRI_mPanTro3-v2.0_pri_genomic.gff.gz"
-    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/858/775/GCF_028858775.2_NHGRI_mPanTro3-v2.0_pri/GCF_028858775.2_NHGRI_mPanTro3-v2.0_pri_assembly_report.txt"
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/858/775/GCF_028858775.2_NHGRI_mPanTro3-v2.1_pri/GCF_028858775.2_NHGRI_mPanTro3-v2.1_pri_genomic.fna.gz"
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/858/775/GCF_028858775.2_NHGRI_mPanTro3-v2.1_pri/GCF_028858775.2_NHGRI_mPanTro3-v2.1_pri_genomic.gff.gz"
+    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/028/858/775/GCF_028858775.2_NHGRI_mPanTro3-v2.1_pri/GCF_028858775.2_NHGRI_mPanTro3-v2.1_pri_assembly_report.txt"
     "https://genomeark.s3.amazonaws.com/species/Pan_troglodytes/mPanTro3/assembly_curated/repeats/mPanTro3_v2.0_pri.RepeatMasker_v1.1.bb"
     "https://genomeark.s3.amazonaws.com/species/Pan_troglodytes/mPanTro3/assembly_curated/repeats/mPanTro3_v2.0_CenSat_v2.0.bb"
     "https://genomeark.s3.amazonaws.com/species/Pan_troglodytes/mPanTro3/assembly_curated/epi/mPanTro3_v2.0.ONT_Guppy6.3.8_5mC.winnowmap_modkit_5mC_CpG_v1.0.bw"
@@ -67,9 +67,9 @@ primate_urls=(
     "https://garrisonlab.s3.amazonaws.com/t2t-primates/wfmash-v0.13.0/conservation/approach2_with_cds/chm13_1/scores/approach2.scores_v0.3.bw"
 )
 
-printf '%s\n' "${primate_urls[@]}" | parallel -j 12 wget
+printf '%s\n' "${primate_urls[@]}" | parallel -j 12 wget -c --tries=3 --timeout=60
 
-# pigz -d *.gz
+pigz -d *_genomic.fna.gz *_genomic.gff.gz
 
 for bb in *.bb; do
     bigBedToBed "$bb" "${bb%.bb}.bed"
@@ -129,11 +129,11 @@ done
 
 species=(
     "GCF_028878055.3_NHGRI_mSymSyn1-v2.1_pri|mSymSyn1|SymSyn"
-    "GCF_028885625.2_NHGRI_mPonPyg2-v2.0_pri|mPonPyg2|PonPyg"
-    "GCF_028885655.2_NHGRI_mPonAbe1-v2.0_pri|mPonAbe1|PonAbe"
+    "GCF_028885625.2_NHGRI_mPonPyg2-v2.1_pri|mPonPyg2|PonPyg"
+    "GCF_028885655.2_NHGRI_mPonAbe1-v2.1_pri|mPonAbe1|PonAbe"
     "GCF_029281585.2_NHGRI_mGorGor1-v2.1_pri|mGorGor1|GorGor"
-    "GCF_029289425.2_NHGRI_mPanPan1-v2.0_pri|mPanPan1|PanPan"
-    "GCF_028858775.2_NHGRI_mPanTro3-v2.0_pri|mPanTro3|PanTro"
+    "GCF_029289425.2_NHGRI_mPanPan1-v2.1_pri|mPanPan1|PanPan"
+    "GCF_028858775.2_NHGRI_mPanTro3-v2.1_pri|mPanTro3|PanTro"
 )
 
 for entry in "${species[@]}"; do
@@ -143,7 +143,8 @@ for entry in "${species[@]}"; do
         "${ncbi}_genomic.fna.gz.fai" \
         "${ncbi}_genomic.fna.gz.gzi" \
         "${ncbi}_genomic.chrom.sizes" \
-        "${ncbi}_genomic.gff" \
+        "${ncbi}_genomic.gff.gz" \
+        "${ncbi}_genomic.gff.gz.tbi" \
         "${ncbi}_assembly_report.txt" \
         ${ga}_*.bb \
         ${ga}_*.bed \
