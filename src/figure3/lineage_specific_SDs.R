@@ -159,8 +159,8 @@ for (directory in dir_ls(fimo_res, type = "directory")) {
 
       # Calculate density and store in a temporary single-row dataframe
       current_species_data <- as.data.frame(fimo_gr) |>
-        count() |>
-        mutate(
+        dplyr::count() |>
+        dplyr::mutate(
             species = species, # Add the species name as a column
             density = (n / sum(assembly_report |> 
                                  filter(genBank_accn != "na") |> 
@@ -201,14 +201,14 @@ plot_df <- plot_df |>
     density = ((overlaps / width) * 1e6)
   ) |>
   dplyr::filter(
-    !sd_status %in% c("unmapped", NA)
+    !sd_status %in% c("unmapped", NA),
+    sd_status != "SharedByAll"
   )
 
 category_map = c(
   "Expanded" = "Expanded",
   "Expanded&New" = "Expanded\nand new",
-  "New" = "New",
-  "SharedByAll" = "Shared\nacross primates"
+  "New" = "New"
 )
 
 plot_df$sd_status <- category_map[plot_df$sd_status]
@@ -236,21 +236,26 @@ species_palette <- c(
 
 sd_violin <- ggplot(plot_df, aes(y = species, x = density, fill = species)) +
   geom_violin(
-    data = subset(plot_df, density > 0),
-    # data = plot_df,
+    data = plot_df,
     trim = TRUE,
     scale = "width",
     color = "black",
-    linewidth = 0.25
+    linewidth = 0.25,
+    alpha = 1
   ) +
-  geom_boxplot(
-    data = subset(plot_df, density > 0),
-    width = 0.12,
-    fill = "white",
-    color = "black",
-    outlier.size = 0.4,
-    alpha = 0.5,
-    linewidth = 0.25
+  geom_jitter(
+    data = plot_df,
+    aes(x = density, y = species, fill = species),
+    shape = 21,
+    height = 0.15,
+    width = 0,
+    color = "gray15",
+    stroke = 0.1,
+    size = 0.6,
+    inherit.aes = FALSE
+  ) +
+  scale_fill_manual(
+    values = scales::alpha(species_palette, 0.7)
   ) +
   geom_point(
     data = primate_genome_densities,
@@ -267,7 +272,6 @@ sd_violin <- ggplot(plot_df, aes(y = species, x = density, fill = species)) +
     breaks = c(0, 10, 100, 1000, 10000),
     labels = c(0, 10, 100, 1000, 10000)
   ) +
-  scale_fill_manual(values = species_palette) +
   labs(
     y = NULL, x = "CTCF density") +
   theme_classic() +

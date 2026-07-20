@@ -57,18 +57,13 @@ src/slurm.sh
 src/.snakemake/
 src/sonLib/
 src/hal/
-src/notebook.ipynb
-src/notebook2.ipynb
-src/notebook3.ipynb
 presentation.pptx
 ARIAL.TTF
 src/agat_log*
-src/dimelo*
+# src/dimelo*
 .DS_Store
 ../.DS_Store
 src/test.ipynb
-notebook.ipynb
-notebook2.ipynb
+notebook*
 config.yml
-notebook4.ipynb
 *.xml

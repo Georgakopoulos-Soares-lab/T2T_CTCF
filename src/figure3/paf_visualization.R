@@ -36,16 +36,12 @@ paf_table <- readPaf(
   include.paf.tags = TRUE
 )
 
-# The offset represents the region:chr1_hap1_hsa1:209537154-209792028
-# Since we the alignment only used the only the specific segmental duplication
-# region, it starts at 0. So we add 209537154 to both start and end to reach the
-# genomic position of the target region in the genome
-offset <- 209537154
-
+# Filter the PAF table to keep only the lineage-specific SD
 paf_table <- paf_table |>
-  dplyr::mutate(
-    q.start = q.start + offset,
-    q.end = q.end + offset
+  dplyr::filter(
+    q.start >= 209537154,
+    q.end <= 209792028,
+    mapq > 10
   )
 
 # Create a name map to convert the PAF species names to
@@ -60,51 +56,6 @@ primate_name_map <- c(
 species.vec <- c(
   "human",
   "pon_pyg"
-)
-
-# This function reads all three CTCF motif FIMO results
-# and loads them into one GRanges object
-load_fimo_results <- function(path) {
-  # Load all FIMO results for the specified genome
-  fimo_files <- fs::dir_ls(path, glob = "*.tsv")
-
-  ctcf_dfs <- purrr::map(fimo_files, ~ read_tsv(
-    .x,
-    comment = "#", # Remove comment lines at the end of each FIMO file
-    show_col_types = FALSE
-  ) |>
-    select(-c(
-      motif_alt_id, score, `p-value`, `q-value`, matched_sequence
-    )) # Remove unnecessary columns
-  )
-
-  # Create one complete dataframe with the results
-  res <- dplyr::bind_rows(ctcf_dfs)
-
-  # Convert the dataframe into a GRanges
-  # object for downstream interval manipulation
-  ctcf_gr <- GenomicRanges::makeGRangesFromDataFrame(
-    res,
-    seqnames.field = "sequence_name",
-    start.field = "start",
-    end.field = "stop",
-    strand.field = "strand",
-    keep.extra.columns = TRUE
-  )
-
-}
-
-# Load CTCF FIMO sites for CHM13, Pongo pygmaeus, and Pan troglodytes
-chm13_gr <- load_fimo_results(
-  fs::path(fimo_res, "chm13")
-)
-
-ponpyg_gr <- load_fimo_results(
-  fs::path(fimo_res, "primates", "PonPyg")
-)
-
-pantro_gr <- load_fimo_results(
-  fs::path(fimo_res, "primates", "PanTro")
 )
 
 # Define a list with column names used in reading the segmental duplications BED
@@ -254,6 +205,52 @@ pantro_sd_gr <- read_sd(
   prefix = "q."
 )
 
+
+# This function reads all three CTCF motif FIMO results
+# and loads them into one GRanges object
+load_fimo_results <- function(path) {
+  # Load all FIMO results for the specified genome
+  fimo_files <- fs::dir_ls(path, glob = "*.tsv")
+
+  ctcf_dfs <- purrr::map(fimo_files, ~ read_tsv(
+    .x,
+    comment = "#", # Remove comment lines at the end of each FIMO file
+    show_col_types = FALSE
+  ) |>
+    select(-c(
+      motif_alt_id, score, `p-value`, `q-value`, matched_sequence
+    )) # Remove unnecessary columns
+  )
+
+  # Create one complete dataframe with the results
+  res <- dplyr::bind_rows(ctcf_dfs)
+
+  # Convert the dataframe into a GRanges
+  # object for downstream interval manipulation
+  ctcf_gr <- GenomicRanges::makeGRangesFromDataFrame(
+    res,
+    seqnames.field = "sequence_name",
+    start.field = "start",
+    end.field = "stop",
+    strand.field = "strand",
+    keep.extra.columns = TRUE
+  )
+
+}
+
+# Load CTCF FIMO sites for CHM13, Pongo pygmaeus, and Pan troglodytes
+chm13_gr <- load_fimo_results(
+  fs::path(fimo_res, "chm13")
+)
+
+ponpyg_gr <- load_fimo_results(
+  fs::path(fimo_res, "primates", "PonPyg")
+)
+
+pantro_gr <- load_fimo_results(
+  fs::path(fimo_res, "primates", "PanTro")
+)
+
 # This is a helper function that will filter CTCF sites to those only
 # within the alignment region
 filter_ctcf <- function(
@@ -269,9 +266,14 @@ filter_ctcf <- function(
     prefix
   )
 
+  region_of_interest <- range(
+    paf_gr,
+    ignore.strand = TRUE
+  )
+  
   filtered_ctcf <- IRanges::subsetByOverlaps(
     ctcf_sites,
-    paf_gr,
+    region_of_interest,
     ignore.strand = TRUE
   )
 
@@ -328,11 +330,13 @@ motif_palette <- c(
   "MA1930.2" = "#0E1933"
 )
 
+strand_palette <- c("+" = "#1b9688", "-" = "#c79a46")
+
 # Here, we define 2 lists with the annotation objects that will plotted for the query region
 # SDs colored by similarity and CTCF sites colored by ID
 query_tracks <- list(
   list(gr = pantro_sd_gr, fill.by = "sim_class", palette = sd_palette),
-  list(gr = pantro_gr, fill.by = "motif_id", palette = motif_palette)
+  list(gr = pantro_gr, fill.by = "strand", palette = strand_palette)
 )
 
 # Here, we define 2 lists with the annotation objects that will plotted for the target regions
@@ -347,7 +351,7 @@ build_specs <- function(species) {
   c(
     list(
       list(gr = t$sd, fill.by = "sim_class", palette = sd_palette, space = "target"),
-      list(gr = t$ctcf, fill.by = "motif_id", palette = motif_palette, space = "target")
+      list(gr = t$ctcf, fill.by = "strand", palette = strand_palette, space = "target")
     ),
     lapply(query_tracks, \(s) c(s, list(space = "query")))
   )
