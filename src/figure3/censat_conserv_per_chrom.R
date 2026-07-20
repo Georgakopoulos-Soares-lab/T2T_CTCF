@@ -11,13 +11,12 @@ suppressPackageStartupMessages({
     library("tidyr", quietly = TRUE, verbose = FALSE)
     library("ggplot2", quietly = TRUE, verbose = FALSE)
     library("BiocParallel", quietly = TRUE, verbose = FALSE)
-    library("ggridges", quietly = TRUE, verbose = FALSE)
   })
 })
 
 # Read the configuration YAML file that stores
 # the paths of the directories used throughout the analysis
-config <- read_yaml("../config.yml")
+config <- read_yaml("../../config.yml")
 
 res_path <- fs::path(config$res) # Path containing all results
 # Path containing FIMO results for T2T primates
@@ -305,7 +304,8 @@ facet_grid <- ggplot(
     axis.text.x = element_text(size = 6),
     axis.title.x = element_text(size = 8),
     axis.title.y = element_text(size = 8),
-    strip.text = element_text(face = "bold")
+    strip.text = element_text(face = "bold"),
+    strip.background = element_blank()
   )
 
 ggsave(
