@@ -110,7 +110,14 @@ chm13_censat_gr <- import(
   format = "BED"
 )
 
-pdf(fs::path(plots, "karyotype_plot.pdf"), width = 4, height = 11.3)
+dir_create(c(fs::path(plots, "figure_1")))
+
+pdf(
+    fs::path(plots, "figure_1", "karyotype_plot.pdf"),
+    width = 8.27,
+    height = 11.4
+)
+
 pp <- karyoploteR::getDefaultPlotParams(plot.type = 2)
 pp$rightmargin <- 0.02
 pp$leftmargin <- 0.1
@@ -122,16 +129,23 @@ kp <- plotKaryotype(
   genome = chm13_genome_gr,
   cytobands = chm13_cytobands_gr,
   plot.type = 2, # Karyotype with room above for the plot
-  cex = 0.75,
+  cex = 0.9,
   chromosomes = "all",
-  plot.params = pp
+  plot.params = pp,
+  labels.plotter = NULL 
+)
+
+kp <- kpAddChromosomeNames(
+  kp,
+  xoffset = -0.02,
+  cex = 0.9
 )
 
 # Add base numbers
 kp <- kpAddBaseNumbers(
   kp,
   add.units = TRUE,
-  cex = 0.3
+  cex = 0.5
 )
 
 # Dummy density pass to get per-window CTCF counts
@@ -176,7 +190,7 @@ for (chrom in names(per_chrom_ctcf_max)) {
     ymin = 0,
     ymax = chrom_ctcf_max,
     data.panel = 1,
-    cex = 0.35,
+    cex = 0.6,
     tick.pos = chrom_ctcf_max,
     side = 1
   )
@@ -185,22 +199,23 @@ for (chrom in names(per_chrom_ctcf_max)) {
 # Plot segmental duplications
 kp <- kpPlotRegions(
   kp,
-  reduce(seg_dups),
+  GenomicRanges::reduce(seg_dups),
   col = "#D68D00",
   border = NA,
   data.panel = 2,
-  r0 = 0.3,
-  r1 = 0.6
+  r0 = 0.4,
+  r1 = 0.7
 )
 
 # Plot centromeric and pericentromeric satellites
 kp <- kpPlotRegions(
   kp,
-  reduce(chm13_censat_gr),
+  GenomicRanges::reduce(chm13_censat_gr),
   col = "#235EA5",
   border = NA,
   data.panel = 2,
-  r0 = 0.65,
-  r1 = 0.95
+  r0 = 0.7,
+  r1 = 1.0
 )
+
 dev.off()

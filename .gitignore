@@ -67,3 +67,4 @@ src/test.ipynb
 notebook*
 config.yml
 *.xml
+CTCF_submission/
