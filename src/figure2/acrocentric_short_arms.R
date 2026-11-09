@@ -16,7 +16,7 @@ suppressPackageStartupMessages({
 
 # Read the configuration YAML file that stores
 # the paths of the directories used throughout the analysis
-config <- read_yaml("../../config.yml")
+config <- read_yaml("../config.yml")
 
 res_path <- fs::path(config$res) # Path containing all results
 # Path containing FIMO results for T2T primates
@@ -136,7 +136,7 @@ acrocentric_censat <- subsetByOverlaps(
 
 pdf(
   fs::path(plots, "acrocentric_regions.pdf"),
-  width = 3.8,
+  width = 8.5,
   height = 6.5
 )
 
@@ -156,7 +156,7 @@ suppressWarnings({
     genome = acrocentric_regions,
     plot.params = pp,
     ideogram.plotter = NULL,
-    cex = 0.7,
+    cex = 0.9,
     chromosomes = "all"
   )
 
@@ -308,7 +308,7 @@ suppressWarnings({
       r0 = track_r0,
       r1 = track_r1,
       data.panel = 1,
-      cex = 0.35,
+      cex = 0.45,
       tick.pos = ceiling(chrom_max),
       side = 1
     )
@@ -335,8 +335,8 @@ suppressWarnings({
       r1 = track_r1,
       data.panel = 1,
       side = "left",
-      cex = 0.4,
-      label.margin = 0.06
+      cex = 0.6,
+      label.margin = 0.03
     )
   }
 
@@ -355,7 +355,7 @@ suppressWarnings({
       r0 = ctcf_r0,
       r1 = ctcf_r1,
       data.panel = 1,
-      cex = 0.35,
+      cex = 0.45,
       tick.pos = chrom_ctcf_max,
       side = 1
     )
@@ -381,13 +381,13 @@ suppressWarnings({
       r1 = ctcf_r1,
       data.panel = 1,
       side = "left",
-      cex = 0.4,
-      label.margin = 0.06
+      cex = 0.6,
+      label.margin = 0.03
     )
 
     kp <- plot_bigwig(
       kp, acc_list, chrom,
-      acc_r0, acc_r1, "% accessible",
+      acc_r0, acc_r1, "Accessible chromatins (%)",
       "#608266"
     )
 

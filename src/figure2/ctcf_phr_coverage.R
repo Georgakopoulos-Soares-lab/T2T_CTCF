@@ -285,9 +285,9 @@ isochores <- rtracklayer::import(
 acro_isochores <- subsetByOverlaps(isochores, acrocentric_regions)
 acro_isochores$score <- NULL
 
-N_ITER <- 10000 # number of permutations
+N_ITER <- 1000 # number of permutations
 SEED <- 42 # random seed so that results are reprodusible
-WORKERS <- 70 # number of cores to use
+WORKERS <- 10 # number of cores to use
 BPP <- MulticoreParam(workers = WORKERS)
 
 # Create a list with the arguments that are used to create the coverage matrix
@@ -586,7 +586,7 @@ phr_metaplot <- ggplot(
 ggsave(
   fs::path(res_path, "plots", "phr_ctcf_coverage.pdf"),
   phr_metaplot,
-  width = 2.1,
-  height = 2.1,
+  width = 2.56,
+  height = 2.37,
   bg = "transparent"
 )

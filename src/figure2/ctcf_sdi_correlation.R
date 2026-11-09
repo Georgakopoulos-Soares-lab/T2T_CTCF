@@ -20,7 +20,7 @@ suppressPackageStartupMessages({
 
 # Read the configuration YAML file that stores
 # the paths of the directories used throughout the analysis
-config <- read_yaml("../config.yml")
+config <- read_yaml("../../config.yml")
 
 res_path <- fs::path(config$res) # Path containing all results
 # Path containing FIMO results for T2T primates
@@ -243,7 +243,7 @@ sdi_corr <- ggplot(
 ggsave(
   fs::path(plots, "acro_ctcf_sdi_correlation.pdf"),
   sdi_corr,
-  width = 2.1,
-  height = 2,
+  width = 2.56,
+  height = 2.25,
   bg = "transparent"
 )

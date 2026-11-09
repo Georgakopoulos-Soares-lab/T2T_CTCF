@@ -51,6 +51,7 @@ load_fimo_results <- function(genome_res) {
 init_karyoplot <- function(
   genome, chromosome, censat_track,
   zoom, plot.type, leftmargin,
+  rightmargin,
   topmargin, bottommargin,
   data1inmargin, ideogramheight,
   cex, tick_dist, minor_tick_dist, digits
@@ -62,6 +63,7 @@ init_karyoplot <- function(
   pp$leftmargin <- leftmargin
   pp$topmargin <- topmargin
   pp$bottommargin <- bottommargin
+  pp$rightmargin <- rightmargin
   pp$data1inmargin <- data1inmargin
 
   # Plot karyotype
@@ -92,7 +94,7 @@ init_karyoplot <- function(
     tick.dist = tick_dist,
     minor.tick.dist = minor_tick_dist,
     add.units = TRUE,
-    cex = cex - 0.1,
+    cex = cex - 0.2,
     digits = digits
   )
 
@@ -189,10 +191,9 @@ add_track_axis <- function(
   # Return the updated plot
   kp
 }
-
 # Read the configuration YAML file that stores
 # the paths of the directories used throughout the analysis
-config <- read_yaml("../../config.yml")
+config <- read_yaml("../config.yml")
 
 res_path <- fs::path(config$res) # Path containing all results
 # Path containing FIMO results for T2T primates
@@ -263,7 +264,7 @@ chr15_acro_censat <- subsetByOverlaps(
 tracks <- tibble::tribble(
   ~file, ~color, ~label,
   #FiberSeq accessibility
-  "all.percent.accessible.bw", "#608266", "% accessible",
+  "all.percent.accessible.bw", "#608266", "Accessible chromatins (%)",
   #Nanopore methylation
   "chm13v2.0_CHM13_CpG_ont_guppy3.6.0_nanopolish0.13.2.bw", "#b88690", "mCpG",
   #DiMeLo-seq H3K4me3
@@ -278,9 +279,10 @@ tracks <- tibble::tribble(
 # svglite::svglite(
 pdf(
   fs::path(plots, "chr15_acro_zoom1.pdf"),
-  width = 4.3,
-  height = 2
+  width = 6.3,
+  height = 1.5
 )
+par(mar = c(0, 0, 0, 0)) 
 
 # Initialize karyoplot
 kp <- init_karyoplot(
@@ -289,12 +291,13 @@ kp <- init_karyoplot(
   censat_track = chr15_acro_censat,
   zoom = chr15_acro,
   plot.type = 1,
-  leftmargin = 0.2,
+  leftmargin = 0.27,
+  rightmargin = 0.0,
   topmargin = 0,
-  bottommargin = 15,
+  bottommargin = 20,
   data1inmargin = 2,
   ideogramheight = 5,
-  cex = 0.5,
+  cex = 0.8,
   tick_dist = 5e6,
   minor_tick_dist = 1e6,
   digits = 2
@@ -337,11 +340,11 @@ kp <- add_track_axis(
   ymax = ctcf_max,
   r0 = ctcf_r0,
   r1 = ctcf_r1,
-  label = "CTCF density\n(sites/100Kb)",
+  label = "CTCF density (sites/100Kb)",
   label_margin = 0.072,
   label_pos = NULL,
   cex_axis = 0.45,
-  cex_label = 0.5
+  cex_label = 0.55
 )
 
 # Iterate over tracks and plot
@@ -367,8 +370,8 @@ for (i in seq_len(nrow(tracks))) {
     label = spec$label,
     label_margin = 0.072,
     label_pos = NULL,
-    cex_axis = 0.45,
-    cex_label = 0.5
+    cex_axis = 0.5,
+    cex_label = 0.55
   )
 }
 
@@ -426,15 +429,14 @@ suppressWarnings({
     rdna_genes$transcripts <- rdna_genes$transcripts[rna45s3_genes]
   })
 })
-
 # Create plot for zoom2
 # svglite::svglite(
 pdf(
   fs::path(plots, "chr15_acro_zoom2.pdf"),
-  width = 4.3,
-  height = 2
+  width = 6.3,
+  height = 1.5
 )
-
+par(mar = c(0, 0, 0, 0)) 
 # Initialize plot
 kp <- init_karyoplot(
   genome = chm13_genome_gr,
@@ -442,12 +444,13 @@ kp <- init_karyoplot(
   censat_track = chr15_acro_censat,
   zoom = chr15_rdna_region,
   plot.type = 1,
-  leftmargin = 0.23,
+  leftmargin = 0.27,
+  rightmargin = 0.0,
   topmargin = 0,
-  bottommargin = 15,
+  bottommargin = 20,
   data1inmargin = 2,
   ideogramheight = 5,
-  cex = 0.5,
+  cex = 0.8,
   tick_dist = 1e6,
   minor_tick_dist = 5e5,
   digits = 2
@@ -478,8 +481,8 @@ kp <- kpAddLabels(
   labels = "rDNA gene copies",
   r0 = 0.07,
   r1 = 0.07,
-  cex = 0.5,
-  label.margin = 0.05
+  cex = 0.55,
+  label.margin = 0.072,
 )
 
 # Here, we account for the rDNA track in the available space
@@ -512,11 +515,11 @@ kp <- add_track_axis(
   ymax = ctcf_max,
   r0 = ctcf_r0,
   r1 = ctcf_r1,
-  label = "CTCF density\n(sites/10Kb)",
+  label = "CTCF density (sites/10Kb)",
   label_margin = 0.072,
   label_pos = NULL,
-  cex_axis = 0.45,
-  cex_label = 0.5
+  cex_axis = 0.5,
+  cex_label = 0.55
 )
 
 # Plot BigWig signals and axis
@@ -542,8 +545,8 @@ for (i in seq_len(nrow(tracks))) {
     label = spec$label,
     label_margin = 0.072,
     label_pos = NULL,
-    cex_axis = 0.45,
-    cex_label = 0.5
+    cex_axis = 0.5,
+    cex_label = 0.55
   )
 }
 
@@ -564,9 +567,10 @@ suppressWarnings({
 # Finally, we plot the zoom 3 region which is a single rDNA gene
 pdf(
   fs::path(plots, "chr15_acro_zoom3.pdf"),
-  width = 4.3,
-  height = 2
+  width = 6.3,
+  height = 1.5
 )
+par(mar = c(0, 0, 0, 0)) 
 
 # Coordinates for a single rDNA gene and flanking region
 rdna_gene <- GRanges("chr15:2649951-2723289")
@@ -578,16 +582,17 @@ kp <- init_karyoplot(
   censat_track = chr15_acro_censat,
   zoom = rdna_gene,
   plot.type = 1,
-  leftmargin = 0.23,
+  leftmargin = 0.27,
+  rightmargin = 0.0,
   topmargin = 0,
-  bottommargin = 15,
+  bottommargin = 20,
   data1inmargin = 1,
   ideogramheight = 5,
-  cex = 0.5,
+  cex = 0.8,
   tick_dist = 1e4,
   minor_tick_dist = 5e3,
   digits = 2
-)
+) 
 
 # In zoom3 the window is 100bp
 zoom3_window <- 100
@@ -614,8 +619,8 @@ kp <- kpAddLabels(
   labels = "rDNA gene copies",
   r0 = 0.07,
   r1 = 0.07,
-  cex = 0.5,
-  label.margin = 0.05
+  cex = 0.55,
+  label.margin = 0.072
 )
 
 available <- 1 - rdna_r1 - track_gap # space above rDNA, minus separator
@@ -629,12 +634,12 @@ tracks$r0 <- ctcf_r1 + track_gap +
 tracks$r1 <- tracks$r0 + track_height
 
 # Merge overlapping CTCF sites for better plotting
-ctcf_data <- reduce(chm13_gr, ignore.strand = FALSE)
+ctcf_data <- GenomicRanges::reduce(chm13_gr, ignore.strand = FALSE)
 
 # Define a color for + and - strand sites
 ctcf_cols <- ifelse(
   strand(ctcf_data) == "-", "#c79a46",
-  ifelse(strand(ctcf_data) == "+", "#1b9688", "#505152")
+  ifelse(strand(ctcf_data) == "+", "#3F345B", "#505152")
 )
 
 # Instead of density plot individual regions
@@ -652,11 +657,11 @@ ctcf_mid <- NULL %||% (ctcf_r0 + ctcf_r1) / 2
 
 kp <- kpAddLabels(
   kp,
-  labels = "CTCF-binding\nsites       ",
+  labels = "CTCF-binding sites",
   r0 = ctcf_mid,
   r1 = ctcf_mid,
-  cex = 0.5,
-  label.margin = 0.065
+  cex = 0.55,
+  label.margin = 0.072
 )
 
 for (i in seq_len(nrow(tracks))) {
@@ -681,8 +686,8 @@ for (i in seq_len(nrow(tracks))) {
     label = spec$label,
     label_margin = 0.072,
     label_pos = NULL,
-    cex_axis = 0.45,
-    cex_label = 0.5
+    cex_axis = 0.5,
+    cex_label = 0.55
   )
 }
 
