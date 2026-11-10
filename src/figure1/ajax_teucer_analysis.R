@@ -96,7 +96,7 @@ isochores <- rtracklayer::import(
 
 N_ITER <- 10 # number of permutations
 SEED <- 42 # random seed so that results are reprodusible
-WORKERS <- 4 # number of cores to use
+WORKERS <- 9 # number of cores to use
 BPP <- MulticoreParam(workers = WORKERS)
 
 # Create a list with the arguments that are used to create the coverage matrix
@@ -279,17 +279,17 @@ ajax_metaplot <- ggplot(
   geom_line(
     data = subset(plot_df, bin <= target_start),
     aes(y = mean),
-    color = "#274a96", linewidth = 0.5
+    color = "#6a5a8f", linewidth = 0.5
   ) +
   geom_line(
     data = subset(plot_df, bin >= target_start & bin <= target_end),
     aes(y = mean),
-    color = "#967527", linewidth = 0.5
+    color = "#7fa4c8", linewidth = 0.5
   ) +
   geom_line(
     data = subset(plot_df, bin >= target_end),
     aes(y = mean),
-    color = "#274a96", linewidth = 0.5
+    color = "#6a5a8f", linewidth = 0.5
   ) +
   geom_ribbon(
     aes(ymin = null_q025, ymax = null_q975),
@@ -325,7 +325,7 @@ ajax_metaplot <- ggplot(
 ggsave(
   fs::path(res_path, "plots", "ajax_teucer_analysis.pdf"),
   ajax_metaplot,
-  width = 2.5,
-  height = 1.8,
+  width = 3.94,
+  height = 1.84,
   bg = "transparent"
 )

@@ -214,7 +214,7 @@ density_bars <- ggplot(
   theme(panel.grid.major.y = element_line(color = "gray90", linewidth = 0.3),
         panel.grid.major.x = element_line(color = "gray90", linewidth = 0.3),
         plot.background = NULL,
-        legend.position = "bottom",
+        legend.position = "none",
         axis.text.y = element_text(size = 8),
         axis.text.x = element_text(size = 6),
         axis.title.x = element_text(size = 8)) +
@@ -347,15 +347,15 @@ density_heatmap <- ggplot(
   theme(
     axis.text.x = element_text(size = 6),
     axis.text.y = element_blank(),
-    legend.position = "bottom",
+    legend.position = "none",
     plot.background = NULL,
     axis.title.x = element_text(size = 8),
-    legend.box.just = "center",
-    legend.justification = "center",
-    legend.title = element_text(size = 8),
-    legend.text = element_text(size = 6),
-    legend.key.width = unit(0.4, "cm"),
-    legend.key.height = unit(0.4, "cm")
+    # legend.box.just = "center",
+    # legend.justification = "center",
+    # legend.title = element_text(size = 8),
+    # legend.text = element_text(size = 6),
+    # legend.key.width = unit(0.4, "cm"),
+    # legend.key.height = unit(0.4, "cm")
   ) +
   labs(x = "Chromosome", y = NULL, fill = "CTCF density\n     (log10)") +
   scale_y_discrete(limits = c(
@@ -369,19 +369,19 @@ density_heatmap <- ggplot(
 combined_density_plots <- (density_bars | density_heatmap) +
   plot_layout(widths = c(1, 3)) &
   theme(
-    legend.position = "bottom",
-    legend.justification = "center",
-    legend.title = element_text(size = 6),
-    legend.text = element_text(size = 6),
-    legend.key.width = unit(0.45, "cm"),
-    legend.key.height = unit(0.2, "cm"),
+    legend.position = "none",
+    # legend.justification = "center",
+    # legend.title = element_text(size = 6),
+    # legend.text = element_text(size = 6),
+    # legend.key.width = unit(0.45, "cm"),
+    # legend.key.height = unit(0.2, "cm"),
     plot.background = NULL
   )
 
 ggsave(
   fs::path(plots, "combined_densities.svg"),
   combined_density_plots,
-  width = 5.34,
-  height = 3.4,
+  width = 8.21,
+  height = 3.58,
   bg = "transparent"
 )

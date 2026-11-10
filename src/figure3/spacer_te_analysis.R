@@ -19,7 +19,7 @@ suppressPackageStartupMessages({
 
 # Read the configuration YAML file that stores
 # the paths of the directories used throughout the analysis
-config <- read_yaml("../../config.yml")
+config <- read_yaml("../config.yml")
 
 res_path <- fs::path(config$res) # Path containing all results
 # Path containing FIMO results for T2T primates
@@ -285,7 +285,7 @@ stacked_perc <- ggplot(
 ) +
   geom_col(
     color = "black",
-    linewidth = 0.5,
+    linewidth = 0.25,
     width = 0.7
   ) +
   labs(

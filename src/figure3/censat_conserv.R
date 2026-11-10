@@ -17,7 +17,7 @@ suppressPackageStartupMessages({
 
 # Read the configuration YAML file that stores
 # the paths of the directories used throughout the analysis
-config <- read_yaml("../config.yml")
+config <- read_yaml("../../config.yml")
 
 res_path <- fs::path(config$res) # Path containing all results
 # Path containing FIMO results for T2T primates
@@ -256,13 +256,13 @@ censat_conserv <- ggplot(
     xintercept = genome_mean_conservation,
     linetype = "dashed",
     linewidth = 0.75,
-    color = "#61573D"
+    color = "#827960"
   ) +
   geom_vline(
     xintercept = 0.75,
     linetype = "dashed",
     linewidth = 0.75,
-    color = "#e1cc97"
+    color = "#826067"
   ) +
   geom_density_ridges(
     color = "black",
@@ -270,19 +270,19 @@ censat_conserv <- ggplot(
     scale = 1,
     from = 0,
     to = 1,
-    linewidth = 0.75,
+    linewidth = 0.25,
     rel_min_height = 0.01
   ) +
   geom_text(
     data = ctcf_counts,
-    aes(x = 0.75, y = censat_type, label = label),
+    aes(x = 0.785, y = censat_type, label = label),
     hjust = 0, vjust = -0.6,
     size = 2,
     inherit.aes = FALSE
   ) +
   geom_text(
     data = ks_results,
-    aes(x = 0.75, y = censat_type, label = sig),
+    aes(x = 0.785, y = censat_type, label = sig),
     hjust = 0, vjust = -1,
     size = 2.5,
     fontface = "bold",
