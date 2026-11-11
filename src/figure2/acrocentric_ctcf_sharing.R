@@ -13,6 +13,7 @@ suppressPackageStartupMessages({
     library("tidyr", quietly = TRUE, verbose = FALSE)
     library("stringr", quietly = TRUE, verbose = FALSE)
     library("ComplexHeatmap", quietly = TRUE, verbose = FALSE)
+    library("ComplexUpset", quietly = TRUE, verbose = FALSE)
   })
 })
 
@@ -27,7 +28,7 @@ fimo_res <- fs::path(res_path, "fimo_res")
 
 # Path containing metadata for T2T primates
 data <- fs::path(config$data)
-plots <- fs::path(res_path, "plots") # Path to store any generated plots
+plots_path <- fs::path(res_path, "plots") # Path to store any generated plots
 
 load_fimo_results <- function(genome_res) {
   # Load all FIMO results for the specified genome
@@ -173,6 +174,76 @@ odgi_pos_res$is_ctcf <- as.integer(
 odgi_pos_res <- odgi_pos_res |>
   filter(is_ctcf == 1)
 
+membership <- odgi_pos_res %>%
+  dplyr::mutate(
+    query_id = paste0(query_chrom, ":", query_start, "-", query_end, ":", query_strand)) %>%
+  dplyr::distinct(query_id, ref_chrom)
+
+mat <- membership %>%
+  dplyr::mutate(present = 1L) %>%
+  tidyr::pivot_wider(names_from = ref_chrom, values_from = present, values_fill = 0L)
+
+chroms <- setdiff(names(mat), "query_id")
+
+upset_plot <- upset(
+  as.data.frame(mat),
+  intersect = chroms,
+  name = "Acrocentric chromosome combinations",
+  sort_intersections_by = "cardinality",
+  sort_sets = FALSE,
+  width_ratio = 0.15,
+  themes = upset_modify_themes(list(
+    intersections_matrix = theme(
+      axis.text.y  = element_text(size = 6),
+      axis.title.x = element_text(size = 8)
+    )
+  )),
+
+  base_annotations = list(
+    "Intersection size" = intersection_size(
+      fill = "#636566",
+      color = "black",
+      linewidth = 0.25,
+      text = list(size = 2.2,
+                angle = 90,
+                hjust = -0.4,
+                vjust = 0.5),
+      width = 0.8,
+    ) +
+      ylab("Number of CTCF sites") +
+      theme(
+        axis.text.y = element_text(size = 6),
+        axis.title.y = element_text(size = 8)
+      )
+      
+  ),
+
+  matrix = intersection_matrix(
+    geom = geom_point(size = 1.5),
+    segment = geom_segment(linewidth = 0.4),
+    outline_color = list(active = "#636566", inactive = "grey90")
+  ),
+
+  set_sizes = upset_set_size(
+    geom = geom_bar(fill = "#636566", color = "black", linewidth = 0.25, width = 0.5)
+  ) +
+    ylab("Set size") +
+    scale_y_reverse(breaks = c(0, 800)) +
+    theme(
+      axis.text.x = element_text(size = 6),
+      axis.title.x = element_text(size = 8)
+    )
+)
+
+ggsave(
+  fs::path(plots_path, "upset_chroms.pdf"),
+  plot = upset_plot,
+  width = 4.35,
+  height = 3.46,
+  units = "in",
+  bg = "transparent"
+)
+
 # Calculate across how many arms each short arm
 # CTCF site appears in
 stats_per_site <- odgi_pos_res |>
@@ -196,75 +267,6 @@ stats_per_site <- stats_per_site |>
     )
   )
 
-# Create a summary where we calculate the percentage of
-# short arm CTCF sites that appear across different arms
-summary_df <- stats_per_site |>
-  dplyr::count(category) |>
-  dplyr::mutate(pct = (n / sum(n)) * 100) |>
-  # make the categories as factors so that the appear in a specific order
-  # when plotted
-  dplyr::mutate(
-    category = factor(
-      category,
-      levels = c("1 arm", "2 arms", "3 arms", "4 arms", "5 arms")
-    )
-  ) |>
-  dplyr::mutate(
-    color = adjustcolor(
-      dplyr::recode(
-        category,
-        "1 arm"  = "#FEE0B6",
-        "2 arms" = "#F6C142",
-        "3 arms" = "#EF7727",
-        "4 arms" = "#DC1F12",
-        "5 arms" = "#A3001A",
-        .default = "grey90"
-      ),
-      alpha.f = 1
-    )
-  )
-
-# Create a bar plot showing the distribution of CTCF sites across arms
-bar_plot <- ggplot(
-  summary_df,
-  aes(x = category, y = pct, fill = color)
-) +
-  geom_col(
-    col = "black",
-    fill = summary_df$color,
-    width = 0.8,
-    linewidth = 0.4
-  ) +
-  geom_text(
-    aes(label = n),
-    vjust = -0.5,
-    size  = 2.5
-  ) +
-  scale_fill_identity() +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  labs(
-    x = "Short arm CTCF site presence",
-    y = "Percentage (%)"
-  ) +
-  theme_classic() +
-  theme(
-    panel.grid.major = element_line(color = "gray90", linewidth = 0.3),
-    plot.background = NULL,
-    legend.position = "none",
-    axis.text.y = element_text(size = 6),
-    axis.text.x = element_text(size = 6),
-    axis.title.x = element_text(size = 8),
-    axis.title.y = element_text(size = 8)
-  )
-
-# Save the plot
-ggsave(
-  fs::path(plots, "ctcf_acro_arm_distribution.pdf"),
-  bar_plot,
-  width = 3.7,
-  height = 1.25,
-  bg = "transparent"
-)
 
 # Filter the ODGI position results to keep only CTCF sites
 # that are shared across arms and are not duplicated in the same arm
@@ -281,11 +283,11 @@ shared_sites <- odgi_pos_res |>
     color = adjustcolor(
       dplyr::recode(
         category,
-        "1 arm"  = "#FEE0B6",
-        "2 arms" = "#F6C142",
-        "3 arms" = "#EF7727",
-        "4 arms" = "#DC1F12",
-        "5 arms" = "#A3001A",
+        "1 arm"  = "#EDEDED",
+        "2 arms" = "#B8B8B8",
+        "3 arms" = "#8F8F8F",
+        "4 arms" = "#606060",
+        "5 arms" = "#3D3D3D",
         .default = "grey90"
       ),
       alpha.f = 0.1
@@ -352,6 +354,7 @@ col_fun <- colorRamp2(
   )
 )
 
+
 # Load CHM13 SD regions
 suppressMessages({
   chm13_sd_full <- read_tsv(
@@ -410,7 +413,7 @@ chm13_acro_phrs <- as.data.frame(
   dplyr::rename(chrom = seqnames)
 
 # Create Circos plot showing CTCF site sharing between arms
-pdf(fs::path(plots, "acro_circos.pdf"), width = 4.15, height = 3.6)
+pdf(fs::path(plots, "acro_circos.pdf"), width = 4.42, height = 3.84)
 lim <- 0.95
 
 # Initialize plot
@@ -492,27 +495,27 @@ circos.genomicLink(
   lwd = 0.5
 )
 
-# Create legends
-sd_legend <- Legend(
-  at = c(
-    0.9, 0.93, 0.98, 1
-  ),
-  col_fun = col_fun,
-  title_position = "topleft",
-  title = "SD Similarity (panel f)",
-  direction = "horizontal",
-  labels_gp = gpar(fontsize = 5),
-  title_gp  = gpar(fontsize = 6),
-  legend_width  = unit(2, "cm"),
-  grid_height   = unit(1.5, "mm")
-)
+# # Create legends
+# sd_legend <- Legend(
+#   at = c(
+#     0.9, 0.93, 0.98, 1
+#   ),
+#   col_fun = col_fun,
+#   title_position = "topleft",
+#   title = "SD Similarity (panel f)",
+#   direction = "horizontal",
+#   labels_gp = gpar(fontsize = 5),
+#   title_gp  = gpar(fontsize = 6),
+#   legend_width  = unit(2, "cm"),
+#   grid_height   = unit(1.5, "mm")
+# )
 
-draw(
-  sd_legend,
-  x = unit(0.95, "npc"),
-  y = unit(0.04, "npc"),
-  just = c("right", "bottom")
-)
+# draw(
+#   sd_legend,
+#   x = unit(0.95, "npc"),
+#   y = unit(0.04, "npc"),
+#   just = c("right", "bottom")
+# )
 
 circos.clear()
 dev.off()

@@ -17,7 +17,7 @@ suppressPackageStartupMessages({
 
 # Read the configuration YAML file that stores
 # the paths of the directories used throughout the analysis
-config <- read_yaml("../config.yml")
+config <- read_yaml("../../config.yml")
 
 res_path <- fs::path(config$res) # Path containing all results
 # Path containing FIMO results for T2T primates
@@ -106,13 +106,13 @@ conserv_beeswarm <- chm13_df |>
     xintercept = genome_mean_conservation,
     linetype = "dashed",
     linewidth = 0.75,
-    color = "#61573D"
+    color = "#827960"
   ) +
   geom_vline(
     xintercept = 0.75,
     linetype = "dashed",
     linewidth = 0.75,
-    color = "#e1cc97"
+    color = "#826067"
   ) +
   geom_quasirandom(
     orientation = "y",
@@ -148,10 +148,9 @@ conserv_beeswarm <- chm13_df |>
   )
 
 ggsave(
-  fs::path(plots, "conservation_beeswarm.png"),
+  fs::path(plots, "conservation_beeswarm.pdf"),
   plot = conserv_beeswarm,
   width = 3,
   height = 2,
-  dpi = 1200,
   bg = "transparent"
 )
