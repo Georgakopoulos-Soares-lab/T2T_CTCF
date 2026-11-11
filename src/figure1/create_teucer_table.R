@@ -93,7 +93,7 @@ teucer_gr <- makeGRangesFromDataFrame(
 )
 
 # Keep only teucer ranges that are next to the ajax satellites
-teucer_gr <- subsetByOverlaps(teucer_gr, ajax_sats, maxgap = 100, ignore.strand = TRUE)
+teucer_gr <- subsetByOverlaps(teucer_gr, ajax_gr, maxgap = 100, ignore.strand = TRUE)
 
 teucer_gr$overlaps <- countOverlaps(teucer_gr, chm13_gr, ignore.strand = TRUE)
 teucer_gr$density <- (teucer_gr$overlaps / width(teucer_gr)) * 1e6
@@ -109,10 +109,10 @@ teucer_chr_density <- as.data.frame(teucer_gr) |>
     .groups = "drop"
   ) |> 
   arrange(teucer_density) |>
-  filter(seqnames %in% unique(seqnames(ajax_sats)))
+  filter(seqnames %in% unique(seqnames(ajax_gr)))
 
 # Calculate ajax stats per chromosome
-ajax_chr_stats <- as.data.frame(ajax_sats) |>
+ajax_chr_stats <- as.data.frame(ajax_gr) |>
   group_by(seqnames) |>
   summarise(
     n_ajax = n(),
