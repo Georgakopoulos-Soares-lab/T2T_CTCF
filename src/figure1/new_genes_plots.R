@@ -25,9 +25,9 @@ res_path <- fs::path(config$res) # Path containing all results
 # Path containing FIMO results for T2T primates
 fimo_res <- fs::path(res_path, "fimo_res")
 
-# Path containing metadata for T2T primates
-data <- fs::path(config$data)
-plots <- fs::path(res_path, "plots") # Path to store any generated plots
+# Path containing metadata_path for T2T primates
+data_path <- fs::path(config$data)
+plots_path <- fs::path(res_path, "plots") # Path to store any generated plots
 
 load_fimo_results <- function(genome_res) {
   # Load all FIMO results for the specified genome
@@ -68,13 +68,13 @@ chm13_gr <- load_fimo_results(fs::path(fimo_res, "chm13"))
 
 # Load the IDs for genes present only in the T2T-CHM13 assembly
 chm13_only_genes <- read_csv(
-  fs::path(data, "chm13", "chm13_new_genes.csv"),
+  fs::path(data_path, "chm13", "chm13_new_genes.csv"),
   show_col_types = FALSE
 )
 
 # Load the GENCODE GFF3 file and convert to dataframe
 gencode_gff3 <- import(
-  fs::path(data, "chm13", "chm13.draft_v2.0.gene_annotation.gff3")
+  fs::path(data_path, "chm13", "chm13.draft_v2.0.gene_annotation.gff3")
 )
 
 gencode_df <- as.data.frame(gencode_gff3)
@@ -119,50 +119,51 @@ genelist <- as.data.frame(gene_gr) |>
   filter(overlaps > 0) |>
   pull(ID)
 
-# Create a stacked bar chart showing the distriburion of gene categories
-# for those genes
-new_genes_stacked <- chm13_only_genes |>
+biotype_labels <- c(
+  "protein_coding" = "Protein coding",
+  "lncRNA" = "lncRNA",
+  "miRNA" = "miRNA",
+  "rRNA" = "rRNA",
+  "processed_pseudogene" = "Processed pseudogene",
+  "unprocessed_pseudogene" = "Unprocessed pseudogene",
+  "transcribed_unprocessed_pseudogene" = "Transcribed unprocessed\npseudogene         ",
+  "transcribed_processed_pseudogene" = "Transcribed processed\npseudogene         ",
+  "StringTie" = "StringTie",
+  "TEC" = "TEC",
+  "IG_C_gene" = "IG C gene"
+)
+
+# Bar plot showing the distribution of gene biotypes for those genes
+new_genes_bar <- chm13_only_genes |>
   filter(gene_ID %in% genelist) |>
   count(biotype) |>
-  mutate(pct = n / sum(n) * 100) |>
-  ggplot(aes(y = "", x = pct, fill = biotype)) +
-  geom_bar(stat = "identity", width = 0.6, color = "black", linewidth = 0.25) +
-  labs(
-    y = NULL,
-    x = "Percentage (%)",
-    fill = "Biotype",
-  ) +
+  mutate(
+    pct = n / sum(n) * 100,
+    biotype = forcats::fct_reorder(biotype, n, .desc = TRUE)   # largest bar on top
+  ) |>
+  ggplot(aes(y = pct, x = biotype, fill = biotype)) +
+  geom_col(width = 0.7, color = "black",fill = "#636566", linewidth = 0.25) +
+  geom_text(aes(label = n), vjust = -0.25, size = 7 / .pt) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) + 
+  scale_x_discrete(
+    labels = biotype_labels,
+    guide = guide_axis(angle = 45)
+    ) +
+  labs(y = "Percentage of genes (%)", x = NULL) +
   theme_classic() +
-  scale_fill_manual(values = c(
-    "protein_coding" = "#2B5C8A",
-    "lncRNA" = "#8B7BAA",
-    "miRNA" = "#E8A838",
-    "rRNA" = "#c2adad",
-    "processed_pseudogene" = "#1B3A5C",
-    "unprocessed_pseudogene" = "#3D6E99",
-    "transcribed_unprocessed_pseudogene" = "#6A9BC5",
-    "transcribed_processed_pseudogene" = "#A3C4DE",
-    "StringTie" = "#5B5B5B",
-    "TEC" = "#C2A8D1",
-    "IG_C_gene" = "#4A7A6F"
-  )) +
   theme(
-    axis.text.y = element_blank(),
-    axis.ticks.y = element_blank(),
     legend.position = "none",
-    panel.grid = element_blank(),
-    axis.title.x = element_text(size = 8),
-    axis.text.x = element_text(size = 6),
-    axis.line.y = element_blank(),
+    axis.text.x = element_text(size = 8),
+    axis.text.y = element_text(size = 6),
+    axis.title.y = element_text(size = 8),
     plot.background = NULL
-  ) +
-  scale_y_discrete(expand = expansion(add = 0.1))
+  )
 
 ggsave(
-  fs::path(plots, "new_genes_stacked.pdf"),
-  new_genes_stacked,
-  width = 3,
-  height = 0.75,
+  fs::path(plots_path, "new_genes_bar.pdf"),
+  new_genes_bar,
+  width = 4.56,
+  height = 2.35,
   bg = "transparent"
 )
 
@@ -191,7 +192,7 @@ pie <- ggplot(pie_df, aes(x = "", y = count, fill = category)) +
   geom_text(
     aes(label = label),
     position = position_stack(vjust = 0.5),
-    size = 2
+    size = 3
   ) +
   scale_fill_manual(
     values = c("With CTCF" = "#A3ABC0", "Without CTCF" = "#CD979A")
@@ -200,15 +201,15 @@ pie <- ggplot(pie_df, aes(x = "", y = count, fill = category)) +
   theme_void() +
   theme(
     legend.position = "none",
-    plot.title = element_text(hjust = 0.5, size = 6, face = "bold"),
+    plot.title = element_text(hjust = 0.5, size = 8, face = "bold"),
     plot.background = NULL
   )
 
 ggsave(
-  fs::path(plots, "new_genes_pie.pdf"),
+  fs::path(plots_path, "new_genes_pie.pdf"),
   pie,
-  width = 2,
-  height = 2,
+  width = 3.10,
+  height = 2.66,
   bg = "transparent"
 )
 
@@ -252,8 +253,14 @@ motif_grouped <- ggplot(
   aes(x = count, y = feature_type, fill = motif)
 ) +
   geom_col(position = "dodge", color = "black", linewidth = 0.25) +
+  geom_text(
+    aes(label = count, group = motif),
+    position = position_dodge(width = 0.9),
+    hjust = -0.2,
+    size = 6 / .pt
+  ) +
   labs(x = "CTCF site count", y = NULL, fill = "motif") +
-  scale_x_log10(expand = expansion(mult = c(0, 0))) +
+  scale_x_log10(expand = expansion(mult = c(0, 0.12))) +
   theme_classic() +
   scale_y_discrete(limits = c(
     "3' UTR", "5' UTR", "Intron",
@@ -262,7 +269,7 @@ motif_grouped <- ggplot(
   scale_fill_manual(values = motif_palette) +
   theme(
     axis.text.x = element_text(size = 6),
-    axis.text.y = element_text(size = 6),
+    axis.text.y = element_text(size = 8),
     legend.position = "none",
     plot.background = NULL,
     axis.title.x = element_text(size = 8),
@@ -271,9 +278,9 @@ motif_grouped <- ggplot(
   )
 
 ggsave(
-  fs::path(plots, "new_genes_grouped.pdf"),
+  fs::path(plots_path, "new_genes_grouped.pdf"),
   motif_grouped,
-  width = 3,
-  height = 2.25,
+  width = 4.5,
+  height = 2.35,
   bg = "transparent"
 )
