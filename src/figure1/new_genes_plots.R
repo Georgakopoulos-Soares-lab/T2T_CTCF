@@ -126,8 +126,8 @@ biotype_labels <- c(
   "rRNA" = "rRNA",
   "processed_pseudogene" = "Processed pseudogene",
   "unprocessed_pseudogene" = "Unprocessed pseudogene",
-  "transcribed_unprocessed_pseudogene" = "Transcribed unprocessed\npseudogene         ",
-  "transcribed_processed_pseudogene" = "Transcribed processed\npseudogene         ",
+  "transcribed_unprocessed_pseudogene" = "Transcribed unprocessed pseudogene",
+  "transcribed_processed_pseudogene" = "Transcribed processed pseudogene",
   "StringTie" = "StringTie",
   "TEC" = "TEC",
   "IG_C_gene" = "IG C gene"
@@ -139,7 +139,7 @@ new_genes_bar <- chm13_only_genes |>
   count(biotype) |>
   mutate(
     pct = n / sum(n) * 100,
-    biotype = forcats::fct_reorder(biotype, n, .desc = TRUE)   # largest bar on top
+    biotype = forcats::fct_reorder(biotype, n, .desc = TRUE)
   ) |>
   ggplot(aes(y = pct, x = biotype, fill = biotype)) +
   geom_col(width = 0.7, color = "black",fill = "#636566", linewidth = 0.25) +
@@ -147,7 +147,7 @@ new_genes_bar <- chm13_only_genes |>
   scale_y_continuous(expand = expansion(mult = c(0, 0.12))) + 
   scale_x_discrete(
     labels = biotype_labels,
-    guide = guide_axis(angle = 45)
+    guide = guide_axis(angle = 30)
     ) +
   labs(y = "Percentage of genes (%)", x = NULL) +
   theme_classic() +
@@ -156,7 +156,10 @@ new_genes_bar <- chm13_only_genes |>
     axis.text.x = element_text(size = 8),
     axis.text.y = element_text(size = 6),
     axis.title.y = element_text(size = 8),
-    plot.background = NULL
+    plot.margin = margin(t = 5.5, r = 5.5, b = 5.5, l = 20),
+    plot.background = NULL,
+    panel.grid.major.y = element_line(color = "gray90", linewidth = 0.3),
+    panel.grid.major.x = element_line(color = "gray90", linewidth = 0.3)
   )
 
 ggsave(
